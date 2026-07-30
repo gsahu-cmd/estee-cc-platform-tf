@@ -32,3 +32,8 @@ output "api_version" {
   description = "The API version of the Confluent Kafka cluster."
   value       = module.elc-nonprod-eastus2-cc-cluster-enterprise.api_version
 }
+
+output "tags" {
+  description = "The tags created for the Confluent Data Platform resources."
+  value       = module.elc_sandbox_tags.tags
+}

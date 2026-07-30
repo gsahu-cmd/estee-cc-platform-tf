@@ -40,6 +40,37 @@ variable "elc_cluster_availability" {
   type        = string
 }
 
+variable "schema_registry_id" {
+  description = "Schema Registry ID"
+  type        = string
+}
+
+variable "catalog_rest_endpoint" {
+  description = "Catalog REST endpoint"
+  type        = string
+}
+
+variable "schema_registry_api_key" {
+  description = "Schema Registry API key"
+  type        = string
+  sensitive   = true
+}
+
+variable "schema_registry_api_secret" {
+  description = "Schema Registry API secret"
+  type        = string
+  sensitive   = true
+}
+
+variable "elc_tags" {
+  description = "Map of Confluent tags to create. Key is tag name, value is tag description"
+  type        = map(string)
+}
+
+variable "elc_gateway_name" {
+  type = string
+}
+
 /*
 variable "elc_cluster_max_ecku" {
   description = "Maximum number of eCKUs for the Enterprise cluster"
@@ -50,5 +81,13 @@ variable "elc_cluster_max_ecku" {
 variable "elc_network_id" {
   description = "Optional Confluent network ID for private networking"
   type        = string
+}
+
+variable "elc_private_endpoints" {
+  description = "Optional map of private endpoints for the cluster"
+  type        = map(object({
+    display_name                 = string
+    private_endpoint_resource_id = string
+  }))
 }
 */
