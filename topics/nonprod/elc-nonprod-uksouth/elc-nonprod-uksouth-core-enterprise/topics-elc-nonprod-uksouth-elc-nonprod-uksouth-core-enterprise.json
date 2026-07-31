@@ -1,0 +1,22 @@
+{
+  "cluster": "elc-nonprod-uksouth-core-enterprise",
+  "environment": "elc-nonprod-uksouth",
+  "topics": [
+    {
+      "config": {
+        "cleanup.policy": "delete",
+        "retention.ms": "86400000"
+      },
+      "name": "elc_app1_public_shipment_transaction_inbound_json_v1",
+      "partitions": 6
+    },
+    {
+      "config": {
+        "cleanup.policy": "delete",
+        "retention.ms": "86400000"
+      },
+      "name": "elc_app1_public_shipment_transaction_raw_json_v1",
+      "partitions": 6
+    }
+  ]
+}

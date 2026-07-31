@@ -1,0 +1,22 @@
+{
+  "cluster": "elc-nonprod-eastus2-core-enterprise",
+  "environment": "elc-nonprod-eastus2",
+  "topics": [
+    {
+      "config": {
+        "cleanup.policy": "delete",
+        "retention.ms": "86400000"
+      },
+      "name": "elc_enterprise_public_payment_transaction_canonical_json_v1",
+      "partitions": 6
+    },
+    {
+      "config": {
+        "cleanup.policy": "delete",
+        "retention.ms": "86400000"
+      },
+      "name": "elc_enterprise_public_payment_transaction_raw_json_v1",
+      "partitions": 6
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "cluster": "elc-sandbox-core-enterprise",
+  "environment": "elc-sandbox",
+  "topic_tags": [
+    {
+      "name": "elc_app1_public_customer_delta_raw_json_v1",
+      "tags": [
+        "PII",
+        "Domain=orders"
+      ]
+    },
+    {
+      "name": "elc_app1_public_customer_transaction_raw_json_v1",
+      "tags": [
+        "PII",
+        "Domain=orders"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "cluster": "elc-nonprod-southeastasia-core-enterprise",
+  "environment": "elc-nonprod-southeastasia",
+  "topics": [
+    {
+      "config": {
+        "cleanup.policy": "delete",
+        "retention.ms": "86400000"
+      },
+      "name": "elc_enterprise_public_stock_delta_raw_json_v1",
+      "partitions": 6
+    },
+    {
+      "config": {
+        "cleanup.policy": "delete",
+        "retention.ms": "86400000"
+      },
+      "name": "elc_enterprise_public_stock_snapshot_enriched_json_v1",
+      "partitions": 6
+    }
+  ]
+}

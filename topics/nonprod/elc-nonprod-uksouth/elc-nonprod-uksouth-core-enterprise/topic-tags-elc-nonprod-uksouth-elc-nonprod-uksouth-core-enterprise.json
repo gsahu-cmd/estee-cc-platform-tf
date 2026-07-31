@@ -1,0 +1,18 @@
+{
+  "cluster": "elc-nonprod-uksouth-core-enterprise",
+  "environment": "elc-nonprod-uksouth",
+  "topic_tags": [
+    {
+      "name": "elc_app1_public_shipment_transaction_inbound_json_v1",
+      "tags": [
+        "Domain=shipping"
+      ]
+    },
+    {
+      "name": "elc_app1_public_shipment_transaction_raw_json_v1",
+      "tags": [
+        "Domain=shipping"
+      ]
+    }
+  ]
+}
