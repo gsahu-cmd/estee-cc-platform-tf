@@ -1,0 +1,20 @@
+{
+  "cluster": "elc-nonprod-eastus2-core-enterprise",
+  "environment": "elc-nonprod-eastus2",
+  "topic_tags": [
+    {
+      "name": "elc_enterprise_public_payment_transaction_canonical_json_v1",
+      "tags": [
+        "PII",
+        "Domain=payments"
+      ]
+    },
+    {
+      "name": "elc_enterprise_public_payment_transaction_raw_json_v1",
+      "tags": [
+        "PII",
+        "Domain=payments"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "elc_app1_public_customer_delta_raw_json_v1": {
+    "config": {
+      "cleanup.policy": "delete",
+      "retention.ms": "86400000"
+    },
+    "partitions_count": 6
+  },
+  "elc_app1_public_customer_transaction_raw_json_v1": {
+    "config": {
+      "cleanup.policy": "delete",
+      "retention.ms": "86400000"
+    },
+    "partitions_count": 6
+  }
+}
