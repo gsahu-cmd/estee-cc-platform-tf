@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import csv
 import logging
+import subprocess
 import sys
 from pathlib import Path
 
@@ -102,6 +103,18 @@ def parse_csv_property(value: str) -> set[str]:
     {"type", "action", "environment", "cluster"}
     """
     return {item.strip().lower() for item in value.split(",") if item.strip()}
+
+
+def parse_bool_property(value: str) -> bool:
+    """Parse a property value into a boolean.
+
+    Input example:
+    "true"
+
+    Output example:
+    True
+    """
+    return value.strip().lower() in {"1", "true", "yes", "y"}
 
 
 # Validate only the generic columns needed before type-specific routing can happen.
@@ -464,6 +477,50 @@ def validate_csv(csv_file: Path) -> int:
     return 0
 
 
+def load_properties_for_request(csv_file: Path) -> dict[str, str]:
+    """Load the property file selected by the first row of a validated CSV."""
+    with csv_file.open("r", encoding="utf-8-sig", newline="") as file_handle:
+        reader = csv.DictReader(file_handle)
+        rows = [
+            (row_number, normalize_row(raw_row))
+            for row_number, raw_row in enumerate(reader, start=2)
+        ]
+
+    request_type = get_request_type(rows[0][1], rows[0][0])
+    platform_environment = get_platform_environment(rows[0][1], rows[0][0])
+    property_file = resolve_property_file(request_type, platform_environment)
+    return load_properties(property_file)
+
+
+def run_git_catalog_update_if_enabled(csv_file: Path) -> int:
+    """Run the Git catalog script after validation when enabled by properties."""
+    try:
+        properties = load_properties_for_request(csv_file)
+    except (FileNotFoundError, IndexError, ValueError) as error:
+        logging.error("Unable to load Git catalog properties: %s", error)
+        return 1
+
+    git_catalog_enabled = parse_bool_property(properties.get("ENABLE_GIT_CATALOG_UPDATE", "false"))
+
+    if not git_catalog_enabled:
+        logging.info("Git catalog update is disabled. ENABLE_GIT_CATALOG_UPDATE=false")
+        return 0
+
+    git_catalog_script = SCRIPT_DIR / "git" / "git_topic_catalog.py"
+
+    if not git_catalog_script.exists():
+        logging.error("Git catalog script not found: %s", git_catalog_script)
+        return 1
+
+    logging.info("Git catalog update is enabled. Launching: %s", git_catalog_script)
+    completed_process = subprocess.run(
+        [sys.executable, str(git_catalog_script), str(csv_file), "--push-to-github"],
+        text=True,
+    )
+
+    return completed_process.returncode
+
+
 # Parse command-line arguments supplied by the user or pipeline.
 def parse_args() -> argparse.Namespace:
     """Read script arguments from the command line.
@@ -483,7 +540,13 @@ def main() -> int:
     """Run the validator and return the final exit code."""
     setup_logging()
     args = parse_args()
-    return validate_csv(Path(args.csv_file))
+    csv_file = Path(args.csv_file)
+    validation_exit_code = validate_csv(csv_file)
+
+    if validation_exit_code != 0:
+        return validation_exit_code
+
+    return run_git_catalog_update_if_enabled(csv_file)
 
 
 if __name__ == "__main__":

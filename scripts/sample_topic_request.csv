@@ -7,5 +7,3 @@ topic,nonprod,create,elc-nonprod-southeastasia,elc-nonprod-southeastasia-core-en
 topic,nonprod,create,elc-nonprod-southeastasia,elc-nonprod-southeastasia-core-enterprise,elc_enterprise_public_stock_snapshot_enriched_json_v1,6,cleanup.policy=delete|retention.ms=86400000,Domain=inventory
 topic,nonprod,create,elc-nonprod-uksouth,elc-nonprod-uksouth-core-enterprise,elc_app1_public_shipment_transaction_inbound_json_v1,6,cleanup.policy=delete|retention.ms=86400000,Domain=shipping
 topic,nonprod,create,elc-nonprod-uksouth,elc-nonprod-uksouth-core-enterprise,elc_app1_public_shipment_transaction_raw_json_v1,6,cleanup.policy=delete|retention.ms=86400000,Domain=shipping
-topic,nonprod,update,elc-sandbox,elc-sandbox-core-enterprise,elc_app1_private_profile_transaction_cleanse1_json_v1,6,cleanup.policy=compact|retention.ms=604800000,PII|Domain=customer
-topic,nonprod,delete,elc-nonprod-eastus2,elc-nonprod-eastus2-core-enterprise,elc_enterprise_public_campaign_delta_raw_json_v1,6,cleanup.policy=delete|retention.ms=86400000,Domain=marketing

@@ -30,7 +30,6 @@ from validate_csv_request import (
 	normalize_row,
 	resolve_property_file,
 	setup_logging,
-	validate_csv,
 )
 
 
@@ -39,13 +38,14 @@ def parse_bool(value: str) -> bool:
 	return value.strip().lower() in {"1", "true", "yes", "y"}
 
 
-def load_csv_properties(csv_file: Path) -> tuple[str, str, dict[str, str]]:
+def load_csv_properties(csv_file: Path) -> tuple[str, str, Path, dict[str, str]]:
 	"""Load the property file selected by the first CSV row."""
 	rows = read_csv_rows(csv_file)
 	request_type = get_request_type(rows[0][1], rows[0][0])
 	platform_environment = get_platform_environment(rows[0][1], rows[0][0])
-	properties = load_properties(resolve_property_file(request_type, platform_environment))
-	return request_type, platform_environment, properties
+	property_file = resolve_property_file(request_type, platform_environment)
+	properties = load_properties(property_file)
+	return request_type, platform_environment, property_file, properties
 
 
 def read_csv_rows(csv_file: Path) -> list[tuple[int, dict[str, str]]]:
@@ -136,16 +136,38 @@ def redact_text(value: str, secret_values: list[str]) -> str:
 	return redacted_value
 
 
-def run_command(command: list[str], cwd: Path | None = None, secret_values: list[str] | None = None) -> str:
+def run_command(
+	command: list[str],
+	cwd: Path | None = None,
+	secret_values: list[str] | None = None,
+	timeout_seconds: int = 300,
+) -> str:
 	"""Run a command and return stdout, raising a sanitized error on failure."""
 	secret_values = secret_values or []
-	completed_process = subprocess.run(
-		command,
-		cwd=str(cwd) if cwd else None,
-		capture_output=True,
-		text=True,
-		env={**os.environ, "GIT_TERMINAL_PROMPT": "0"},
-	)
+	command_name = " ".join(command[:3])
+	logging.info("Running command: %s", command_name)
+
+	try:
+		completed_process = subprocess.run(
+			command,
+			cwd=str(cwd) if cwd else None,
+			capture_output=True,
+			text=True,
+			timeout=timeout_seconds,
+			env={
+				**os.environ,
+				"GCM_INTERACTIVE": "never",
+				"GIT_ASKPASS": "true",
+				"GIT_TERMINAL_PROMPT": "0",
+				"SSH_ASKPASS": "true",
+			},
+		)
+	except subprocess.TimeoutExpired as error:
+		stdout = redact_text((error.stdout or "").strip(), secret_values)
+		stderr = redact_text((error.stderr or "").strip(), secret_values)
+		raise RuntimeError(
+			f"Command timed out after {timeout_seconds} seconds.\nSTDOUT: {stdout}\nSTDERR: {stderr}"
+		) from error
 
 	if completed_process.returncode != 0:
 		stdout = redact_text(completed_process.stdout.strip(), secret_values)
@@ -335,8 +357,8 @@ def sort_catalogs(catalog_data: dict, tags_data: dict) -> None:
 	tags_data["topic_tags"] = sorted(tags_data.get("topic_tags", []), key=lambda item: item.get("name", ""))
 
 
-def update_catalogs(csv_file: Path, catalog_root: Path, skip_validation: bool = False) -> tuple[list[Path], list[str]]:
-	"""Validate CSV and update local topic/tag catalog files.
+def update_catalogs(csv_file: Path, catalog_root: Path) -> tuple[list[Path], list[str]]:
+	"""Update local topic/tag catalog files from an already validated CSV.
 
 	Input example:
 	csv_file=main/scripts/sample_topic_request.csv
@@ -345,11 +367,6 @@ def update_catalogs(csv_file: Path, catalog_root: Path, skip_validation: bool = 
 	Output example:
 	([topics/nonprod/.../topics-...json, topics/nonprod/.../topic-tags-...json], [])
 	"""
-	validation_exit_code = 0 if skip_validation else validate_csv(csv_file)
-
-	if validation_exit_code != 0:
-		return [], ["CSV validation failed. Catalog files were not updated."]
-
 	rows = read_csv_rows(csv_file)
 	request_type = get_request_type(rows[0][1], rows[0][0])
 	platform_environment = get_platform_environment(rows[0][1], rows[0][0])
@@ -423,11 +440,6 @@ def update_catalogs_in_github(
 	if catalog_root.is_absolute():
 		return "", "", [], ["Catalog root must be a relative path when using GitHub catalog update."]
 
-	validation_exit_code = validate_csv(csv_file)
-
-	if validation_exit_code != 0:
-		return "", "", [], ["CSV validation failed. GitHub catalog update was not started."]
-
 	github_user, github_token = load_github_environment()
 	clean_repo_url = normalize_https_repo_url(repo_url)
 	authenticated_repo_url = build_authenticated_repo_url(clean_repo_url, github_user, github_token)
@@ -449,7 +461,7 @@ def update_catalogs_in_github(
 		run_command(["git", "config", "user.name", github_user], cwd=repo_dir)
 		run_command(["git", "config", "user.email", f"{github_user}@users.noreply.github.com"], cwd=repo_dir)
 
-		changed_files, errors = update_catalogs(csv_file, repo_dir / catalog_root, skip_validation=True)
+		changed_files, errors = update_catalogs(csv_file, repo_dir / catalog_root)
 
 		if errors:
 			return "", branch_name, [], errors
@@ -528,7 +540,7 @@ def main() -> int:
 	csv_file = Path(args.csv_file).resolve()
 
 	try:
-		request_type, platform_environment, properties = load_csv_properties(csv_file)
+		request_type, platform_environment, property_file, properties = load_csv_properties(csv_file)
 	except (FileNotFoundError, IndexError, ValueError) as error:
 		logging.error("Unable to load CSV properties: %s", error)
 		return 1
@@ -539,13 +551,22 @@ def main() -> int:
 
 	logging.info("CSV request type: %s", request_type)
 	logging.info("CSV platform environment: %s", platform_environment)
+	logging.info("Loaded catalog properties from: %s", property_file)
 	catalog_root = Path(args.catalog_root or properties.get("GIT_CATALOG_ROOT", "topics"))
-	git_enabled = args.push_to_github or parse_bool(properties.get("ENABLE_GIT_CATALOG_UPDATE", "false"))
+	property_git_enabled = parse_bool(properties.get("ENABLE_GIT_CATALOG_UPDATE", "false"))
+	git_enabled = args.push_to_github or property_git_enabled
+	logging.info("Catalog root: %s", catalog_root)
+	logging.info("ENABLE_GIT_CATALOG_UPDATE property: %s", properties.get("ENABLE_GIT_CATALOG_UPDATE", "false"))
+	logging.info("--push-to-github argument: %s", args.push_to_github)
+	logging.info("GitHub catalog update mode: %s", "enabled" if git_enabled else "disabled")
 
 	if git_enabled:
 		repo_url = args.repo_url or properties.get("GIT_REPO_URL", "")
 		base_branch = args.base_branch or properties.get("GIT_BASE_BRANCH", "main")
 		branch_prefix = args.branch_prefix or properties.get("GIT_BRANCH_PREFIX", "topic-request")
+		logging.info("GitHub repo URL configured: %s", "yes" if repo_url else "no")
+		logging.info("GitHub base branch: %s", base_branch)
+		logging.info("GitHub branch prefix: %s", branch_prefix)
 
 		try:
 			pull_request_url, branch_name, changed_files, errors = update_catalogs_in_github(
