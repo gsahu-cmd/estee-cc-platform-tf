@@ -1,4 +1,4 @@
-resource "confluent_kafka_topic" "main" {
+resource "confluent_kafka_topic" "topic" {
   for_each = var.topics
 
   topic_name       = each.key
