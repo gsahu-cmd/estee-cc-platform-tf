@@ -339,7 +339,7 @@ def topic_entry_from_row(row: dict[str, str], properties: dict[str, str], row_nu
 
 	return {
 		"name": row.get("name", ""),
-		"environment_id": cluster_id,
+		"cluster_id": cluster_id,
 		"partitions_count": int(row.get("partitions", "0")),
 		"config": config,
 	}, []
@@ -354,7 +354,7 @@ def apply_topic_action(catalog_data: dict, topic_entry: dict, action: str, row_n
 	topic_name = topic_entry["name"]
 	topic_value = {
 		"config": topic_entry["config"],
-		"environment_id": topic_entry["environment_id"],
+		"cluster_id": topic_entry["cluster_id"],
 		"partitions_count": topic_entry["partitions_count"],
 	}
 	topic_exists = topic_name in catalog_data

@@ -6,7 +6,7 @@ resource "confluent_kafka_topic" "main" {
   config           = each.value.config
 
   kafka_cluster {
-    id = each.value.environment_id
+    id = each.value.cluster_id
   }
 
   lifecycle {
