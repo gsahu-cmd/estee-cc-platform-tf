@@ -86,7 +86,7 @@ def load_json_file(file_path: Path, default_data: dict) -> dict:
 	"""Load an existing JSON catalog file or return a default structure.
 
 	Input example:
-	topics/nonprod/elc-sandbox/elc-sandbox-core-enterprise/topics-elc-sandbox-elc-sandbox-core-enterprise.json
+	main/topics/nonprod/elc-sandbox/elc-sandbox-core-enterprise/topics-elc-sandbox-elc-sandbox-core-enterprise.json
 
 	Output example:
 	Existing JSON content, or the supplied default data when the file is missing.
@@ -283,8 +283,8 @@ def build_catalog_paths(
 	platform_environment=nonprod, environment=elc-sandbox, cluster=elc-sandbox-core-enterprise
 
 	Output example:
-	topics/nonprod/elc-sandbox/elc-sandbox-core-enterprise/topics-elc-sandbox-elc-sandbox-core-enterprise.json
-	topics/nonprod/elc-sandbox/elc-sandbox-core-enterprise/topic-tags-elc-sandbox-elc-sandbox-core-enterprise.json
+	main/topics/nonprod/elc-sandbox/elc-sandbox-core-enterprise/topics-elc-sandbox-elc-sandbox-core-enterprise.json
+	main/topics/nonprod/elc-sandbox/elc-sandbox-core-enterprise/topic-tags-elc-sandbox-elc-sandbox-core-enterprise.json
 	"""
 	topic_template = properties.get("TOPIC_CATALOG_FILE_TEMPLATE", "topics-{environment}-{cluster}.json")
 	tags_template = properties.get("TOPIC_TAGS_CATALOG_FILE_TEMPLATE", "topic-tags-{environment}-{cluster}.json")
@@ -409,10 +409,10 @@ def update_catalogs(csv_file: Path, catalog_root: Path) -> tuple[list[Path], lis
 
 	Input example:
 	csv_file=main/scripts/sample_topic_request.csv
-	catalog_root=topics
+	catalog_root=main/topics
 
 	Output example:
-	([topics/nonprod/.../topics-...json, topics/nonprod/.../topic-tags-...json], [])
+	([main/topics/nonprod/.../topics-...json, main/topics/nonprod/.../topic-tags-...json], [])
 	"""
 	rows = read_csv_rows(csv_file)
 	request_type = get_request_type(rows[0][1], rows[0][0])
@@ -543,7 +543,7 @@ def parse_args() -> argparse.Namespace:
 	"""Read command-line arguments.
 
 	Command example:
-	python main/scripts/git/git_topic_catalog.py main/scripts/sample_topic_request.csv --catalog-root topics
+	python scripts/git/git_topic_catalog.py scripts/sample_topic_request.csv --catalog-root main/topics
 	"""
 	parser = argparse.ArgumentParser(description="Generate topic catalog JSON files from a validated topic CSV.")
 	parser.add_argument("csv_file", help="Path to the validated topic CSV request file.")
@@ -596,7 +596,7 @@ def main() -> int:
 	logging.info("CSV request type: %s", request_type)
 	logging.info("CSV platform environment: %s", platform_environment)
 	logging.info("Loaded catalog properties from: %s", property_file)
-	catalog_root = Path(args.catalog_root or properties.get("GIT_CATALOG_ROOT", "topics"))
+	catalog_root = Path(args.catalog_root or properties.get("GIT_CATALOG_ROOT", "main/topics"))
 	property_git_enabled = parse_bool(properties.get("ENABLE_GIT_CATALOG_UPDATE", "false"))
 	git_enabled = args.push_to_github or property_git_enabled
 	logging.info("Catalog root: %s", catalog_root)
