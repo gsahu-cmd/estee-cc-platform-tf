@@ -4,6 +4,7 @@ resource "confluent_kafka_topic" "topic" {
   topic_name       = each.key
   partitions_count = each.value.partitions_count
   config           = each.value.config
+  rest_endpoint    = var.rest_endpoint
 
   kafka_cluster {
     id = each.value.cluster_id
