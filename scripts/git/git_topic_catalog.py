@@ -136,6 +136,14 @@ def redact_text(value: str, secret_values: list[str]) -> str:
 	return redacted_value
 
 
+def command_name_for_log(command: list[str], secret_values: list[str]) -> str:
+	"""Build a safe command label for logs without printing tokens."""
+	if len(command) >= 2 and command[0] == "git" and command[1] == "push":
+		return "git push <redacted-repo-url> <branch>"
+
+	return redact_text(" ".join(command[:3]), secret_values)
+
+
 def run_command(
 	command: list[str],
 	cwd: Path | None = None,
@@ -144,7 +152,7 @@ def run_command(
 ) -> str:
 	"""Run a command and return stdout, raising a sanitized error on failure."""
 	secret_values = secret_values or []
-	command_name = " ".join(command[:3])
+	command_name = command_name_for_log(command, secret_values)
 	logging.info("Running command: %s", command_name)
 
 	try:
@@ -287,19 +295,52 @@ def build_catalog_paths(
 	return topic_file, tags_file
 
 
+def parse_cluster_id_map(properties: dict[str, str]) -> dict[str, str]:
+	"""Parse cluster display-name to cluster-id mappings from properties."""
+	mapping_value = properties.get("CONFLUENT_CLUSTER_IDS", "")
+	cluster_ids: dict[str, str] = {}
+
+	for item in mapping_value.split(","):
+		if not item.strip():
+			continue
+
+		if "|" not in item:
+			continue
+
+		cluster_name, cluster_id = item.split("|", 1)
+		cluster_ids[cluster_name.strip().lower()] = cluster_id.strip()
+
+	return cluster_ids
+
+
+def get_cluster_id(row: dict[str, str], properties: dict[str, str], row_number: int) -> tuple[str, list[str]]:
+	"""Return the Confluent Kafka cluster id for one CSV row."""
+	cluster_name = row.get("cluster", "").lower()
+	cluster_ids = parse_cluster_id_map(properties)
+	cluster_id = cluster_ids.get(cluster_name, "")
+
+	if not cluster_id:
+		return "", [f"Row {row_number}: cluster id is missing for cluster '{cluster_name}'."]
+
+	return cluster_id, []
+
+
 def topic_entry_from_row(row: dict[str, str], properties: dict[str, str], row_number: int) -> tuple[dict, list[str]]:
 	"""Convert one CSV row into one topic catalog entry.
 
 	Tags are intentionally excluded from this entry and written separately.
 	"""
 	config, config_errors = parse_topic_config(row, properties, row_number)
+	cluster_id, cluster_id_errors = get_cluster_id(row, properties, row_number)
+	errors = config_errors + cluster_id_errors
 
-	if config_errors:
-		return {}, config_errors
+	if errors:
+		return {}, errors
 
 	return {
 		"name": row.get("name", ""),
-		"partitions": int(row.get("partitions", "0")),
+		"environment_id": cluster_id,
+		"partitions_count": int(row.get("partitions", "0")),
 		"config": config,
 	}, []
 
@@ -310,26 +351,30 @@ def apply_topic_action(catalog_data: dict, topic_entry: dict, action: str, row_n
 	create fails if the topic already exists.
 	update/delete fail if the topic does not exist.
 	"""
-	topics = catalog_data.setdefault("topics", [])
 	topic_name = topic_entry["name"]
-	existing_index = next((index for index, topic in enumerate(topics) if topic.get("name") == topic_name), None)
+	topic_value = {
+		"config": topic_entry["config"],
+		"environment_id": topic_entry["environment_id"],
+		"partitions_count": topic_entry["partitions_count"],
+	}
+	topic_exists = topic_name in catalog_data
 
 	if action == "create":
-		if existing_index is not None:
+		if topic_exists:
 			return [f"Row {row_number}: topic '{topic_name}' already exists in catalog."]
-		topics.append(topic_entry)
+		catalog_data[topic_name] = topic_value
 		return []
 
 	if action == "update":
-		if existing_index is None:
+		if not topic_exists:
 			return [f"Row {row_number}: topic '{topic_name}' does not exist in catalog for update."]
-		topics[existing_index] = topic_entry
+		catalog_data[topic_name] = topic_value
 		return []
 
 	if action == "delete":
-		if existing_index is None:
+		if not topic_exists:
 			return [f"Row {row_number}: topic '{topic_name}' does not exist in catalog for delete."]
-		del topics[existing_index]
+		del catalog_data[topic_name]
 		return []
 
 	return [f"Row {row_number}: unsupported action '{action}'."]
@@ -353,7 +398,9 @@ def apply_tag_action(tags_data: dict, topic_name: str, tags: list[str], action: 
 
 def sort_catalogs(catalog_data: dict, tags_data: dict) -> None:
 	"""Sort catalog entries by topic name for stable PR diffs."""
-	catalog_data["topics"] = sorted(catalog_data.get("topics", []), key=lambda item: item.get("name", ""))
+	sorted_catalog_data = {topic_name: catalog_data[topic_name] for topic_name in sorted(catalog_data)}
+	catalog_data.clear()
+	catalog_data.update(sorted_catalog_data)
 	tags_data["topic_tags"] = sorted(tags_data.get("topic_tags", []), key=lambda item: item.get("name", ""))
 
 
@@ -386,10 +433,7 @@ def update_catalogs(csv_file: Path, catalog_root: Path) -> tuple[list[Path], lis
 
 	for (environment, cluster), group_rows in grouped_rows.items():
 		topic_file, tags_file = build_catalog_paths(catalog_root, platform_environment, environment, cluster, properties)
-		catalog_data = load_json_file(
-			topic_file,
-			{"environment": environment, "cluster": cluster, "topics": []},
-		)
+		catalog_data = load_json_file(topic_file, {})
 		tags_data = load_json_file(
 			tags_file,
 			{"environment": environment, "cluster": cluster, "topic_tags": []},
