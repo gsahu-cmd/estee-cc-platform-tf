@@ -1,0 +1,26 @@
+{
+  "elc_app1_public_customer_delta_raw_json_v1": {
+    "config": {
+      "cleanup.policy": "delete",
+      "retention.ms": "86400000"
+    },
+    "environment_id": "lkc-gqn5wn3",
+    "partitions_count": 6
+  },
+  "elc_app1_public_customer_transaction_raw_json_v1": {
+    "config": {
+      "cleanup.policy": "delete",
+      "retention.ms": "86400000"
+    },
+    "environment_id": "lkc-gqn5wn3",
+    "partitions_count": 6
+  },
+  "elc_enterprise_public_payment_transaction_canonical_json_v1": {
+    "config": {
+      "cleanup.policy": "delete",
+      "retention.ms": "86400000"
+    },
+    "environment_id": "lkc-gqn5wn3",
+    "partitions_count": 6
+  }
+}
