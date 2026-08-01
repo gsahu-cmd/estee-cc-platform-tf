@@ -1,0 +1,27 @@
+{
+  "cluster": "elc-sandbox-eastus2-core-basic",
+  "environment": "elc-sandbox",
+  "topic_tags": [
+    {
+      "name": "elc_app1_public_customer_delta_raw_json_v1",
+      "tags": [
+        "PII",
+        "Domain=orders"
+      ]
+    },
+    {
+      "name": "elc_app1_public_customer_transaction_raw_json_v1",
+      "tags": [
+        "PII",
+        "Domain=orders"
+      ]
+    },
+    {
+      "name": "elc_enterprise_public_payment_transaction_canonical_json_v1",
+      "tags": [
+        "PII",
+        "Domain=payments"
+      ]
+    }
+  ]
+}
