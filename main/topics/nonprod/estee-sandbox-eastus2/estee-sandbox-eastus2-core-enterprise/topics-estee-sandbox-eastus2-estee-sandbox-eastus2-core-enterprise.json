@@ -1,0 +1,26 @@
+{
+  "elc_entsvc_public_batch_snapshot_enriched_json_v1": {
+    "cluster_id": "lkc-nvo97m6",
+    "config": {
+      "cleanup.policy": "delete",
+      "retention.ms": "86400000"
+    },
+    "partitions_count": 6
+  },
+  "elc_entsvc_public_customer_snapshot_enriched_json_v1": {
+    "cluster_id": "lkc-nvo97m6",
+    "config": {
+      "cleanup.policy": "delete",
+      "retention.ms": "86400000"
+    },
+    "partitions_count": 6
+  },
+  "elc_entsvc_public_product_snapshot_enriched_json_v1": {
+    "cluster_id": "lkc-nvo97m6",
+    "config": {
+      "cleanup.policy": "delete",
+      "retention.ms": "86400000"
+    },
+    "partitions_count": 6
+  }
+}
