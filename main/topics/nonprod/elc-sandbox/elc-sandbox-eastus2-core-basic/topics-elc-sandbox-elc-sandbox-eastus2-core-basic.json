@@ -5,7 +5,7 @@
       "cleanup.policy": "delete",
       "retention.ms": "86400000"
     },
-    "partitions_count": 5
+    "partitions_count": 7
   },
   "elc_app1_public_customer_transaction_raw_json_v1": {
     "cluster_id": "lkc-gqn5wn3",
