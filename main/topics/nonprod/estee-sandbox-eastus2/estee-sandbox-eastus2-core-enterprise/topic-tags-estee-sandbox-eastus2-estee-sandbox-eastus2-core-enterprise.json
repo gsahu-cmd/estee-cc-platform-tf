@@ -10,6 +10,13 @@
       ]
     },
     {
+      "name": "elc_entsvc_public_batch_snapshot_enriched_json_v2",
+      "tags": [
+        "PII",
+        "Domain=orders"
+      ]
+    },
+    {
       "name": "elc_entsvc_public_customer_snapshot_enriched_json_v1",
       "tags": [
         "PII",
@@ -17,7 +24,21 @@
       ]
     },
     {
+      "name": "elc_entsvc_public_customer_snapshot_enriched_json_v2",
+      "tags": [
+        "PII",
+        "Domain=payments"
+      ]
+    },
+    {
       "name": "elc_entsvc_public_product_snapshot_enriched_json_v1",
+      "tags": [
+        "PII",
+        "Domain=orders"
+      ]
+    },
+    {
+      "name": "elc_entsvc_public_product_snapshot_enriched_json_v2",
       "tags": [
         "PII",
         "Domain=orders"

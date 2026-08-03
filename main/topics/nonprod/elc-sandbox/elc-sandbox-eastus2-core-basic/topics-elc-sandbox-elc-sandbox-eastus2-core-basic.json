@@ -5,7 +5,7 @@
       "cleanup.policy": "delete",
       "retention.ms": "86400000"
     },
-    "partitions_count": 6
+    "partitions_count": 5
   },
   "elc_app1_public_customer_transaction_raw_json_v1": {
     "cluster_id": "lkc-gqn5wn3",
@@ -15,7 +15,23 @@
     },
     "partitions_count": 6
   },
+  "elc_app1_public_customer_transaction_raw_json_v2": {
+    "cluster_id": "lkc-gqn5wn3",
+    "config": {
+      "cleanup.policy": "delete",
+      "retention.ms": "86400000"
+    },
+    "partitions_count": 6
+  },
   "elc_enterprise_public_payment_transaction_canonical_json_v1": {
+    "cluster_id": "lkc-gqn5wn3",
+    "config": {
+      "cleanup.policy": "delete",
+      "retention.ms": "86400000"
+    },
+    "partitions_count": 6
+  },
+  "elc_enterprise_public_payment_transaction_canonical_json_v2": {
     "cluster_id": "lkc-gqn5wn3",
     "config": {
       "cleanup.policy": "delete",
