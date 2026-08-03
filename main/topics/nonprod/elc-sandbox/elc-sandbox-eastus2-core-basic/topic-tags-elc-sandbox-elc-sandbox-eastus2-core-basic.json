@@ -17,7 +17,21 @@
       ]
     },
     {
+      "name": "elc_app1_public_customer_transaction_raw_json_v2",
+      "tags": [
+        "PII",
+        "Domain=orders"
+      ]
+    },
+    {
       "name": "elc_enterprise_public_payment_transaction_canonical_json_v1",
+      "tags": [
+        "PII",
+        "Domain=payments"
+      ]
+    },
+    {
+      "name": "elc_enterprise_public_payment_transaction_canonical_json_v2",
       "tags": [
         "PII",
         "Domain=payments"
