@@ -1,5 +1,5 @@
-resource "confluent_kafka_cluster" "estee_sandbox_eastus2_core_enterprise" {
-  display_name = "estee-sandbox-eastus2-core-enterprise"
+resource "confluent_kafka_cluster" "elc_nonprod_eastus2_core_enterprise" {
+  display_name = "elc-nonprod-eastus2-core-enterprise"
   availability = "SINGLE_ZONE"
   cloud        = "AZURE"
   region       = "eastus2"
