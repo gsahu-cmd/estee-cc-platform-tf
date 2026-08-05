@@ -1,7 +1,5 @@
-resource "confluent_environment" "elc_nonprod_eastus2" {
-  display_name = "elc-nonprod-eastus2"
-
-  lifecycle {
-    prevent_destroy = true
-  }
+module "elc-nonprod-eastus2-cc-env" {
+  source = "../../../modules/cc_environment"
+  elc_mod_env_name = var.elc_env_name
+  elc_mod_env_stream_package = var.elc_env_stream_package
 }

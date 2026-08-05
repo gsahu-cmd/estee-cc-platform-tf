@@ -36,6 +36,7 @@ variable "elc_mod_cluster_availability" {
   }
 }
 
+/*
 variable "elc_mod_cluster_max_ecku" {
   description = "Maximum number of eCKUs for the Enterprise cluster"
   type        = number
@@ -45,6 +46,7 @@ variable "elc_mod_cluster_max_ecku" {
     error_message = "elc_mod_cluster_max_ecku must be at least 1."
   }
 }
+*/
 
 variable "elc_mod_network_id" {
   description = "Optional Confluent network ID for private networking"

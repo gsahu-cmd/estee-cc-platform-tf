@@ -4,9 +4,7 @@ resource "confluent_kafka_cluster" "enterprise" {
   cloud        = var.elc_mod_cluster_cloud
   region       = var.elc_mod_cluster_region
 
-  enterprise {
-    max_ecku = var.elc_mod_cluster_max_ecku
-  }
+  enterprise {}
 
   environment {
     id = var.elc_mod_environment_id
@@ -22,9 +20,15 @@ resource "confluent_kafka_cluster" "enterprise" {
   lifecycle {
     prevent_destroy = true
 
+    ignore_changes = [
+      enterprise[0].max_ecku
+    ]
+
+    /*
     precondition {
       condition     = !(upper(replace(var.elc_mod_cluster_availability, "-", "_")) == "HIGH" && var.elc_mod_cluster_max_ecku < 2)
       error_message = "HIGH availability Enterprise clusters must have max_ecku >= 2."
     }
+    */
   }
 }

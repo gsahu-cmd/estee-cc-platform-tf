@@ -1,4 +1,4 @@
-resource "confluent_gateway" "elc_nonprod_eastus2_access_gateway" {
+/*resource "confluent_gateway" "elc_nonprod_eastus2_access_gateway" {
   display_name = "estee-sandbox-eastus2"
 
   environment {
@@ -13,3 +13,4 @@ resource "confluent_gateway" "elc_nonprod_eastus2_access_gateway" {
     prevent_destroy = true
   }
 }
+*/

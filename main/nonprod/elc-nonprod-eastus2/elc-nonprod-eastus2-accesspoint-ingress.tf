@@ -1,4 +1,4 @@
-resource "confluent_access_point" "elc_nonprod_eastus2_access_point" {
+/*resource "confluent_access_point" "elc_nonprod_eastus2_access_point" {
   display_name = "estee-sandbox-eastus2"
 
   environment {
@@ -17,3 +17,4 @@ resource "confluent_access_point" "elc_nonprod_eastus2_access_point" {
     prevent_destroy = true
   }
 }
+*/

@@ -9,3 +9,33 @@ variable "confluent_cloud_api_secret" {
   type        = string
   sensitive   = true
 }
+
+variable "elc_env_name" {
+  description = "Confluent environment name"
+  type        = string
+}
+
+variable "elc_env_stream_package" {
+  description = "Confluent environment Stream package name "
+  type        = string
+}
+
+variable "elc_cluster_name" {
+  description = "Confluent Kafka cluster name"
+  type        = string
+}
+
+variable "elc_cluster_cloud" {
+  description = "Cloud provider (AWS, AZURE, or GCP)"
+  type        = string
+}
+
+variable "elc_cluster_region" {
+  description = "Confluent Cloud region"
+  type        = string
+}
+
+variable "elc_cluster_availability" {
+  description = "Cluster availability - SINGLE_ZONE or MULTI_ZONE"
+  type        = string
+}
