@@ -1,0 +1,230 @@
+{
+  "version": 4,
+  "terraform_version": "1.14.0",
+  "serial": 7,
+  "lineage": "ca81acb6-13fa-e23d-2587-6bacea42f6d1",
+  "outputs": {},
+  "resources": [
+    {
+      "mode": "managed",
+      "type": "confluent_access_point",
+      "name": "elc_nonprod_eastus2_access_point",
+      "provider": "provider[\"registry.terraform.io/confluentinc/confluent\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "aws_egress_private_link_endpoint": [],
+            "aws_ingress_private_link_endpoint": [],
+            "aws_private_network_interface": [],
+            "azure_egress_private_link_endpoint": [],
+            "azure_ingress_private_link_endpoint": [
+              {
+                "dns_domain": "ap4lgwy2.eastus2.azure.accesspoint.confluent.cloud",
+                "private_endpoint_resource_id": "/subscriptions/3c33b258-6a1b-498c-9dd7-2e4b52ff16dc/resourceGroups/RG-AM-EastUS-NonProd-EIS-EIP01/providers/Microsoft.Network/privateEndpoints/PE-AM-EastUS-NonProd-EIP",
+                "private_link_service_alias": "plattg-5p5zpq-privatelink.0f8fd9a9-fd3d-40a1-9f9e-a2ac67fa72df.eastus2.azure.privatelinkservice",
+                "private_link_service_resource_id": "/subscriptions/500de9b4-6035-4419-b7af-10a3e0340224/resourceGroups/plattg-5p5zpq/providers/Microsoft.Network/privateLinkServices/plattg-5p5zpq-privatelink"
+              }
+            ],
+            "display_name": "estee-sandbox-eastus2",
+            "environment": [
+              {
+                "id": "env-mgzk07"
+              }
+            ],
+            "gateway": [
+              {
+                "id": "gw-ov05ww"
+              }
+            ],
+            "gcp_egress_private_service_connect_endpoint": [],
+            "gcp_ingress_private_service_connect_endpoint": [],
+            "id": "ap-4lgwy2",
+            "timeouts": {
+              "create": null,
+              "delete": null
+            }
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo3MjAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIwIn0="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "confluent_environment",
+      "name": "elc_nonprod_eastus2",
+      "provider": "provider[\"registry.terraform.io/confluentinc/confluent\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "display_name": "elc-nonprod-eastus2",
+            "id": "env-mgzk07",
+            "resource_name": "crn://confluent.cloud/organization=4cb9d130-25e3-4d1e-b8b2-c045bf9a6417/environment=env-mgzk07",
+            "stream_governance": [
+              {
+                "package": "ESSENTIALS"
+              }
+            ]
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "private": "bnVsbA=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "confluent_gateway",
+      "name": "elc_nonprod_eastus2_access_gateway",
+      "provider": "provider[\"registry.terraform.io/confluentinc/confluent\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "aws_egress_private_link_gateway": [],
+            "aws_ingress_private_link_gateway": [],
+            "aws_private_network_interface_gateway": [],
+            "azure_egress_private_link_gateway": [],
+            "azure_ingress_private_link_gateway": [
+              {
+                "private_link_service_alias": "plattg-5p5zpq-privatelink.0f8fd9a9-fd3d-40a1-9f9e-a2ac67fa72df.eastus2.azure.privatelinkservice",
+                "private_link_service_resource_id": "/subscriptions/500de9b4-6035-4419-b7af-10a3e0340224/resourceGroups/plattg-5p5zpq/providers/Microsoft.Network/privateLinkServices/plattg-5p5zpq-privatelink",
+                "region": "eastus2"
+              }
+            ],
+            "display_name": "estee-sandbox-eastus2",
+            "environment": [
+              {
+                "id": "env-mgzk07"
+              }
+            ],
+            "gcp_ingress_private_service_connect_gateway": [],
+            "id": "gw-ov05ww"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjAifQ=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "confluent_identity_pool",
+      "name": "elc_nonprod_eastus2_identity_pool",
+      "provider": "provider[\"registry.terraform.io/confluentinc/confluent\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "description": "Identity Pool for WebMethods NonProd",
+            "display_name": "elc-ip-webmethods-nonprod",
+            "filter": "'webmethods' in claims.aud \u0026\u0026 claims.iss == 'https://diamond-qa.elcompanies.com/as' \u0026\u0026 claims.client_id == '41eaf363-4630-448e-8710-9875ae90fa56'",
+            "id": "pool-d9JVz",
+            "identity_claim": "claims.client_id",
+            "identity_provider": [
+              {
+                "id": "op-rgJN"
+              }
+            ]
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "private": "bnVsbA=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "confluent_identity_provider",
+      "name": "elc_nonprod_eastus2_workload_identity",
+      "provider": "provider[\"registry.terraform.io/confluentinc/confluent\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "description": "PingID Identity Provider for ELC NonProd Workload Identity",
+            "display_name": "PingID",
+            "id": "op-rgJN",
+            "identity_claim": "claims.client_id",
+            "issuer": "https://diamond-qa.elcompanies.com/as",
+            "jwks_uri": "https://diamond-qa.elcompanies.com/as/jwks"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "private": "bnVsbA=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "confluent_kafka_cluster",
+      "name": "elc_nonprod_eastus2_core_enterprise",
+      "provider": "provider[\"registry.terraform.io/confluentinc/confluent\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "api_version": "cmk/v2",
+            "availability": "LOW",
+            "basic": [],
+            "bootstrap_endpoint": "lkc-nvo97m6.eastus2.azure.private.confluent.cloud:9092",
+            "byok_key": [
+              {
+                "id": ""
+              }
+            ],
+            "cloud": "AZURE",
+            "dedicated": [],
+            "deletion_protection": false,
+            "display_name": "elc-nonprod-eastus2-core-enterprise",
+            "endpoints": [
+              {
+                "access_point_id": "PRIVATE_LINK",
+                "bootstrap_endpoint": "lkc-nvo97m6.eastus2.azure.private.confluent.cloud:9092",
+                "connection_type": "PRIVATE_LINK",
+                "rest_endpoint": "https://lkc-nvo97m6.eastus2.azure.private.confluent.cloud:443"
+              },
+              {
+                "access_point_id": "ap-4lgwy2",
+                "bootstrap_endpoint": "lkc-nvo97m6-ap4lgwy2.eastus2.azure.accesspoint.glb.confluent.cloud:9092",
+                "connection_type": "PRIVATE_LINK",
+                "rest_endpoint": "https://lkc-nvo97m6-ap4lgwy2.eastus2.azure.accesspoint.glb.confluent.cloud:443"
+              }
+            ],
+            "enterprise": [
+              {
+                "max_ecku": 32
+              }
+            ],
+            "environment": [
+              {
+                "id": "env-mgzk07"
+              }
+            ],
+            "freight": [],
+            "id": "lkc-nvo97m6",
+            "kind": "Cluster",
+            "network": [
+              {
+                "id": ""
+              }
+            ],
+            "rbac_crn": "crn://confluent.cloud/organization=4cb9d130-25e3-4d1e-b8b2-c045bf9a6417/environment=env-mgzk07/cloud-cluster=lkc-nvo97m6",
+            "region": "eastus2",
+            "rest_endpoint": "https://lkc-nvo97m6.eastus2.azure.private.confluent.cloud:443",
+            "standard": [],
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoyNTkyMDAwMDAwMDAwMDAsInVwZGF0ZSI6MjU5MjAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0="
+        }
+      ]
+    }
+  ],
+  "check_results": null
+}
+

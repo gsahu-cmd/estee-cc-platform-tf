@@ -1,4 +1,4 @@
-resource "confluent_kafka_cluster" "elc_nonprod_eastus2_core_enterprise" {
+/*resource "confluent_kafka_cluster" "elc_nonprod_eastus2_core_enterprise" {
   display_name = "elc-nonprod-eastus2-core-enterprise"
   availability = "SINGLE_ZONE"
   cloud        = "AZURE"
@@ -14,3 +14,4 @@ resource "confluent_kafka_cluster" "elc_nonprod_eastus2_core_enterprise" {
     prevent_destroy = true
   }
 }
+*/
