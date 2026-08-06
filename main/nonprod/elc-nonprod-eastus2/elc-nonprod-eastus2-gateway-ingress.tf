@@ -1,12 +1,12 @@
 /*resource "confluent_gateway" "elc_nonprod_eastus2_access_gateway" {
-  display_name = "estee-sandbox-eastus2"
+  display_name = var.elc_ingress_gateway_name
 
   environment {
-    id = "env-mgzk07"
+    id = module.elc-nonprod-eastus2-cc-env.environment_id
   }
 
   azure_ingress_private_link_gateway {
-    region = "eastus2"
+    region = var.elc_cluster_region
   }
 
   lifecycle {

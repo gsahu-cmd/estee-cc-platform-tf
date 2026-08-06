@@ -1,9 +1,18 @@
 elc_identity_pool_role_bindings = {
-  app1_orders_write = {
-    identity_pool_id       = "pool-abc123"
+  orders_write = {
+    identity_pool_id       = "pool-abc123" (NONPROD)
     role_name              = "DeveloperWrite"
     resource_kind          = "topic"
-    resource_name          = "orders"
+    resource_name          = "orders*"
+    kafka_cluster_id       = "lkc-123456"
+    kafka_cluster_rbac_crn = "crn://confluent.cloud/organization=<org-id>/environment=env-123456/cloud-cluster=lkc-123456"
+  }
+
+  app1_orders_write = {
+    identity_pool_id       = "pool-abc123" (NONPROD)
+    role_name              = "DeveloperWrite"
+    resource_kind          = "topic"
+    resource_name          = "app1*"
     kafka_cluster_id       = "lkc-123456"
     kafka_cluster_rbac_crn = "crn://confluent.cloud/organization=<org-id>/environment=env-123456/cloud-cluster=lkc-123456"
   }

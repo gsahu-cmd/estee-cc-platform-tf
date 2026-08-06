@@ -1,8 +1,9 @@
+/*
 import {
   to = module.elc-nonprod-eastus2-cc-cluster-enterprise.confluent_kafka_cluster.enterprise
   id = "env-mgzk07/lkc-nvo97m6"
 }
-
+*/
 /*
   This file is used to import the existing Confluent Cloud environment into Terraform state.
   It should not be modified or deleted, as it is required for the import process.

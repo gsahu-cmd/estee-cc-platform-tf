@@ -8,7 +8,12 @@ output "gateway_name" {
   value       = confluent_gateway.gateway.display_name
 }
 
-output "gateway_address" {
-  description = "Gateway address for connectivity"
-  value       = confluent_gateway.gateway.gateway_address
+output "private_link_service_alias" {
+  description = "Azure Private Link Service alias"
+  value       = confluent_gateway.gateway.azure_ingress_private_link_gateway[0].private_link_service_alias
+}
+
+output "private_link_service_resource_id" {
+  description = "Azure Private Link Service resource ID"
+  value       = confluent_gateway.gateway.azure_ingress_private_link_gateway[0].private_link_service_resource_id
 }

@@ -1,7 +1,4 @@
 type,platform_environment,action,environment,cluster,name,partitions,config,tags
-topic,nonprod,create,elc-sandbox,elc-sandbox-eastus2-core-basic,elc_app1_public_customer_transaction_raw_json_v2,6,cleanup.policy=delete|retention.ms=86400000,PII|Domain=orders
-topic,nonprod,update,elc-sandbox,elc-sandbox-eastus2-core-basic,elc_app1_public_customer_delta_raw_json_v1,5,cleanup.policy=delete|retention.ms=86400000,PII|Domain=orders
-topic,nonprod,create,elc-sandbox,elc-sandbox-eastus2-core-basic,elc_enterprise_public_payment_transaction_canonical_json_v2,6,cleanup.policy=delete|retention.ms=86400000,PII|Domain=payments
-topic,nonprod,create,estee-sandbox-eastus2,estee-sandbox-eastus2-core-enterprise,elc_entsvc_public_product_snapshot_enriched_json_v2,6,cleanup.policy=delete|retention.ms=86400000,PII|Domain=orders
-topic,nonprod,create,estee-sandbox-eastus2,estee-sandbox-eastus2-core-enterprise,elc_entsvc_public_batch_snapshot_enriched_json_v2,6,cleanup.policy=delete|retention.ms=86400000,PII|Domain=orders
-topic,nonprod,create,estee-sandbox-eastus2,estee-sandbox-eastus2-core-enterprise,elc_entsvc_public_customer_snapshot_enriched_json_v2,6,cleanup.policy=delete|retention.ms=86400000,PII|Domain=payments
+topic,nonprod,create,elc-sandbox,elc-sandbox-eastus2-core-basic,elc_app1_public_customer_transaction_raw_json_v3,6,cleanup.policy=delete|retention.ms=86400000,PII|Domain=orders
+topic,nonprod,create,elc-sandbox,elc-sandbox-eastus2-core-basic,elc_app1_public_customer_delta_raw_json_v3,5,cleanup.policy=delete|retention.ms=86400000,PII|Domain=orders
+topic,nonprod,create,elc-sandbox,elc-sandbox-eastus2-core-basic,elc_enterprise_public_payment_transaction_canonical_json_v3,6,cleanup.policy=delete|retention.ms=86400000,PII|Domain=payments

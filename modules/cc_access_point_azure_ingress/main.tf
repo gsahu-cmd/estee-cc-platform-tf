@@ -11,6 +11,10 @@ resource "confluent_access_point" "access_point" {
     id = var.elc_mod_gateway_id
   }
 
+  depends_on = [
+    confluent_gateway.gateway
+  ]
+
   azure_ingress_private_link_endpoint {
     private_endpoint_resource_id = each.value.elc_mod_private_endpoint_resource_id
   }

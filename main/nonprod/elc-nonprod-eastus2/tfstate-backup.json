@@ -1,0 +1,153 @@
+{
+  "version": 4,
+  "terraform_version": "1.14.0",
+  "serial": 13,
+  "lineage": "ca81acb6-13fa-e23d-2587-6bacea42f6d1",
+  "outputs": {
+    "bootstrap_endpoint": {
+      "value": "lkc-nvo97m6.eastus2.azure.private.confluent.cloud:9092",
+      "type": "string"
+    },
+    "cluster_id": {
+      "value": "lkc-nvo97m6",
+      "type": "string"
+    },
+    "cluster_name": {
+      "value": "elc-nonprod-eastus2-core-enterprise",
+      "type": "string"
+    },
+    "environment_id": {
+      "value": "env-mgzk07",
+      "type": "string"
+    },
+    "environment_name": {
+      "value": "elc-nonprod-eastus2",
+      "type": "string"
+    }
+  },
+  "resources": [
+    {
+      "module": "module.elc-nonprod-eastus2-cc-cluster-enterprise",
+      "mode": "managed",
+      "type": "confluent_kafka_cluster",
+      "name": "enterprise",
+      "provider": "provider[\"registry.terraform.io/confluentinc/confluent\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "api_version": "cmk/v2",
+            "availability": "LOW",
+            "basic": [],
+            "bootstrap_endpoint": "lkc-nvo97m6.eastus2.azure.private.confluent.cloud:9092",
+            "byok_key": [
+              {
+                "id": ""
+              }
+            ],
+            "cloud": "AZURE",
+            "dedicated": [],
+            "deletion_protection": false,
+            "display_name": "elc-nonprod-eastus2-core-enterprise",
+            "endpoints": [
+              {
+                "access_point_id": "PRIVATE_LINK",
+                "bootstrap_endpoint": "lkc-nvo97m6.eastus2.azure.private.confluent.cloud:9092",
+                "connection_type": "PRIVATE_LINK",
+                "rest_endpoint": "https://lkc-nvo97m6.eastus2.azure.private.confluent.cloud:443"
+              },
+              {
+                "access_point_id": "ap-4lgwy2",
+                "bootstrap_endpoint": "lkc-nvo97m6-ap4lgwy2.eastus2.azure.accesspoint.glb.confluent.cloud:9092",
+                "connection_type": "PRIVATE_LINK",
+                "rest_endpoint": "https://lkc-nvo97m6-ap4lgwy2.eastus2.azure.accesspoint.glb.confluent.cloud:443"
+              }
+            ],
+            "enterprise": [
+              {
+                "max_ecku": 32
+              }
+            ],
+            "environment": [
+              {
+                "id": "env-mgzk07"
+              }
+            ],
+            "freight": [],
+            "id": "lkc-nvo97m6",
+            "kind": "Cluster",
+            "network": [
+              {
+                "id": ""
+              }
+            ],
+            "rbac_crn": "crn://confluent.cloud/organization=4cb9d130-25e3-4d1e-b8b2-c045bf9a6417/environment=env-mgzk07/cloud-cluster=lkc-nvo97m6",
+            "region": "eastus2",
+            "rest_endpoint": "https://lkc-nvo97m6.eastus2.azure.private.confluent.cloud:443",
+            "standard": [],
+            "timeouts": {
+              "create": null,
+              "update": null
+            }
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoyNTkyMDAwMDAwMDAwMDAsInVwZGF0ZSI6MjU5MjAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0=",
+          "dependencies": [
+            "module.elc-nonprod-eastus2-cc-env.confluent_environment.elc-environment"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "module.elc-nonprod-eastus2-cc-env",
+      "mode": "managed",
+      "type": "confluent_environment",
+      "name": "elc-environment",
+      "provider": "provider[\"registry.terraform.io/confluentinc/confluent\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "display_name": "elc-nonprod-eastus2",
+            "id": "env-mgzk07",
+            "resource_name": "crn://confluent.cloud/organization=4cb9d130-25e3-4d1e-b8b2-c045bf9a6417/environment=env-mgzk07",
+            "stream_governance": [
+              {
+                "package": "ESSENTIALS"
+              }
+            ]
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjAifQ=="
+        }
+      ]
+    }
+  ],
+  "check_results": [
+    {
+      "object_kind": "var",
+      "config_addr": "module.elc-nonprod-eastus2-cc-cluster-enterprise.var.elc_mod_cluster_cloud",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "module.elc-nonprod-eastus2-cc-cluster-enterprise.var.elc_mod_cluster_cloud",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "module.elc-nonprod-eastus2-cc-cluster-enterprise.var.elc_mod_cluster_availability",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "module.elc-nonprod-eastus2-cc-cluster-enterprise.var.elc_mod_cluster_availability",
+          "status": "pass"
+        }
+      ]
+    }
+  ]
+}
+
