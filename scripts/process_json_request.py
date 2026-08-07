@@ -5,7 +5,9 @@ from __future__ import annotations
 
 import argparse
 import logging
+import shutil
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
 
@@ -91,11 +93,60 @@ def validate_process_config(process_config: dict[str, str]) -> list[str]:
 	"""Validate supported root-level process settings."""
 	errors: list[str] = []
 	git_enabled = parse_bool_property(process_config, "GIT_ENABLED")
+	archive_root = process_config.get("ARCHIVE_ROOT", "").strip()
 
 	if git_enabled:
 		errors.append("GIT_ENABLED=true is not supported yet. Current script does not implement Git operations.")
 
+	if parse_bool_property(process_config, "ARCHIVE_ENABLED", default=True) and not archive_root:
+		errors.append("ARCHIVE_ROOT is mandatory when ARCHIVE_ENABLED=true.")
+
 	return errors
+
+
+def resolve_process_path(raw_path: str) -> Path:
+	"""Resolve a process config path relative to the repo root unless it is absolute."""
+	path = Path(raw_path)
+	if path.is_absolute():
+		return path
+	return REPO_ROOT / path
+
+
+def timestamped_archive_dir(archive_root: Path, args: argparse.Namespace) -> Path:
+	"""Build a unique timestamped archive directory for one processed request."""
+	timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+	base_name = f"{timestamp}_{args.mode}_{args.platform_environment}_{args.environment}_{args.cluster}"
+	archive_dir = archive_root / base_name
+	suffix = 1
+
+	while archive_dir.exists():
+		archive_dir = archive_root / f"{base_name}_{suffix:02d}"
+		suffix += 1
+
+	return archive_dir
+
+
+def archive_input_files(
+	args: argparse.Namespace,
+	process_config: dict[str, str],
+	input_files: dict[str, Path],
+) -> tuple[Path | None, list[str]]:
+	"""Move processed input files to a timestamped archive directory."""
+	if not parse_bool_property(process_config, "ARCHIVE_ENABLED", default=True):
+		logging.info("Input archive is disabled by process config.")
+		return None, []
+
+	archive_root = resolve_process_path(process_config.get("ARCHIVE_ROOT", "scripts/archive"))
+	archive_dir = timestamped_archive_dir(archive_root, args)
+
+	try:
+		archive_dir.mkdir(parents=True, exist_ok=False)
+		for file_name, file_path in sorted(input_files.items()):
+			shutil.move(str(file_path), str(archive_dir / file_name))
+	except OSError as error:
+		return None, [f"Failed to archive input files to {archive_dir}: {error}"]
+
+	return archive_dir, []
 
 
 def validate_run_scope(args: argparse.Namespace) -> tuple[Path, list[str]]:
@@ -225,9 +276,14 @@ def main() -> int:
 		errors.extend(validate_input_files(args, target_dir, input_files))
 
 	updated_files: list[Path] = []
+	archive_dir: Path | None = None
 	if not errors:
 		updated_files, update_errors = update_generated_files(args, target_dir, input_files)
 		errors.extend(update_errors)
+
+	if not errors:
+		archive_dir, archive_errors = archive_input_files(args, process_config, input_files)
+		errors.extend(archive_errors)
 
 	if errors:
 		logging.error("Validation failed with %s error(s).", len(errors))
@@ -241,6 +297,9 @@ def main() -> int:
 			logging.info("Updated generated file: %s", file_path.relative_to(REPO_ROOT))
 	else:
 		logging.info("No generated Terraform JSON files were changed in this step.")
+
+	if archive_dir:
+		logging.info("Archived input files to: %s", archive_dir.relative_to(REPO_ROOT))
 	return 0
 
 
