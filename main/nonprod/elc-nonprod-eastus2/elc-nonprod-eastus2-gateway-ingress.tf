@@ -1,16 +1,7 @@
-/*resource "confluent_gateway" "elc_nonprod_eastus2_access_gateway" {
-  display_name = var.elc_ingress_gateway_name
+module "elc-nonprod-eastus2-cc-ingress-gateway" {
+  source = "../../../modules/cc_gateway_azure_ingress"
 
-  environment {
-    id = module.elc-nonprod-eastus2-cc-env.environment_id
-  }
-
-  azure_ingress_private_link_gateway {
-    region = var.elc_cluster_region
-  }
-
-  lifecycle {
-    prevent_destroy = true
-  }
+  elc_mod_gateway_name = var.elc_ingress_gateway_name
+  elc_mod_region       = var.elc_cluster_region
+  elc_mod_environment_id       = module.elc-nonprod-eastus2-cc-env.environment_id
 }
-*/

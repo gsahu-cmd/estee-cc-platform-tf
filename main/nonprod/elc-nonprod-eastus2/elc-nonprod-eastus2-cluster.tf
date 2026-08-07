@@ -5,5 +5,9 @@
   elc_mod_cluster_cloud        = var.elc_cluster_cloud
   elc_mod_cluster_region       = var.elc_cluster_region
   elc_mod_cluster_availability = var.elc_cluster_availability
+
+  depends_on = [
+    module.elc-nonprod-eastus2-cc-access-point
+  ]
 }
 */

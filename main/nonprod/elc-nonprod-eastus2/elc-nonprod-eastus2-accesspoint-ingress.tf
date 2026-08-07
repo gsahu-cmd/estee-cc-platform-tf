@@ -1,20 +1,8 @@
-/*resource "confluent_access_point" "elc_nonprod_eastus2_access_point" {
-  display_name = "estee-sandbox-eastus2"
+/*module "elc-nonprod-eastus2-cc-access-point" {
+  source = "../../../modules/cc_access_point_azure_ingress"
 
-  environment {
-    id = "env-mgzk07"
-  }
-
-  gateway {
-    id = "gw-ov05ww"
-  }
-
-  azure_ingress_private_link_endpoint {
-    private_endpoint_resource_id = "/subscriptions/3c33b258-6a1b-498c-9dd7-2e4b52ff16dc/resourceGroups/RG-AM-EastUS-NonProd-EIS-EIP01/providers/Microsoft.Network/privateEndpoints/PE-AM-EastUS-NonProd-EIP"
-  }
-
-  lifecycle {
-    prevent_destroy = true
-  }
+  elc_mod_environment_id   = module.elc-nonprod-eastus2-cc-env.environment_id
+  elc_mod_gateway_id       = module.elc-nonprod-eastus2-cc-ingress-gateway.gateway_id
+  elc_mod_private_endpoints = var.elc_private_endpoints
 }
 */

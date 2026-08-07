@@ -10,17 +10,7 @@ variable "confluent_cloud_api_secret" {
   sensitive   = true
 }
 
-variable "elc_oidc_identity_provider_id" {
-  description = "Confluent identity provider ID"
+variable "prod_oidc_identity_provider_id" {
+  description = "Confluent workload identity provider ID for prod"
   type        = string
-}
-
-variable "elc_oidc_identity_pools" {
-  description = "Map of identity pools to create"
-  type = map(object({
-    display_name   = string
-    description    = string
-    identity_claim = string
-    filter         = string
-  }))
 }
