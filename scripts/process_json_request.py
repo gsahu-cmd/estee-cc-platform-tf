@@ -13,6 +13,7 @@ from typing import Any, Callable
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
 CONFIG_DIR = SCRIPT_DIR / "config"
+PROCESS_CONFIG_FILE = CONFIG_DIR / "process_json_request.properties"
 
 if str(SCRIPT_DIR) not in sys.path:
 	sys.path.insert(0, str(SCRIPT_DIR))
@@ -64,6 +65,35 @@ def parse_args() -> argparse.Namespace:
 def config_file_for(request_type: str, platform_environment: str) -> Path:
 	"""Resolve the per-type config file."""
 	return CONFIG_DIR / platform_environment / f"{request_type}_json_config.properties"
+
+
+def parse_bool_property(properties: dict[str, str], key: str, default: bool = False) -> bool:
+	"""Parse a yes/no process-level config property."""
+	value = properties.get(key)
+
+	if value is None:
+		return default
+
+	return value.strip().lower() in {"1", "true", "yes", "y"}
+
+
+def load_process_config() -> tuple[dict[str, str], list[str]]:
+	"""Load root-level process configuration used by the main script."""
+	try:
+		return load_properties(PROCESS_CONFIG_FILE), []
+	except (FileNotFoundError, ValueError) as error:
+		return {}, [str(error)]
+
+
+def validate_process_config(process_config: dict[str, str]) -> list[str]:
+	"""Validate supported root-level process settings."""
+	errors: list[str] = []
+	git_enabled = parse_bool_property(process_config, "GIT_ENABLED")
+
+	if git_enabled:
+		errors.append("GIT_ENABLED=true is not supported yet. Current script is validation-only.")
+
+	return errors
 
 
 def validate_run_scope(args: argparse.Namespace) -> tuple[Path, list[str]]:
@@ -140,7 +170,14 @@ def main() -> int:
 		args.input_dir,
 	)
 
-	target_dir, errors = validate_run_scope(args)
+	process_config, errors = load_process_config()
+	if not errors:
+		errors.extend(validate_process_config(process_config))
+		logging.info("Loaded process config: %s", PROCESS_CONFIG_FILE.relative_to(CONFIG_DIR))
+		logging.info("Git integration enabled: %s", parse_bool_property(process_config, "GIT_ENABLED"))
+
+	target_dir, run_scope_errors = validate_run_scope(args)
+	errors.extend(run_scope_errors)
 	input_files, input_errors = discover_input_files(args.input_dir)
 	errors.extend(input_errors)
 

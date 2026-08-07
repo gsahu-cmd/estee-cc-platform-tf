@@ -45,12 +45,9 @@ def validate_topic_name(topic_name: str, properties: dict[str, str], item_label:
 	valid_events = {value.lower() for value in parse_list_property(properties, "VALID_EVENTS")}
 	valid_processing_stages = {value.lower() for value in parse_list_property(properties, "VALID_PROCESSING_STAGES")}
 	valid_data_formats = {value.lower() for value in parse_list_property(properties, "VALID_DATA_FORMATS")}
+	free_text_part_regex = properties.get("TOPIC_FREE_TEXT_PART_REGEX", r"^[a-z0-9][a-z0-9-]*$").strip()
 
-	data_format = tokens[-2]
 	version = tokens[-1]
-
-	if data_format not in valid_data_formats:
-		errors.append(f"{item_label}: data format '{data_format}' is not valid.")
 
 	if not re.fullmatch(r"v[0-9]+", version):
 		errors.append(f"{item_label}: version '{version}' must be v followed by a number.")
@@ -64,19 +61,34 @@ def validate_topic_name(topic_name: str, properties: dict[str, str], item_label:
 		if data_class not in valid_data_classes:
 			errors.append(f"{item_label}: data class '{data_class}' is not valid.")
 
-	remaining_parts = tokens[visibility_index + 1 : -2]
-	if len(remaining_parts) < 3:
-		errors.append(f"{item_label}: topic name must include object, event, and processing stage.")
+	remaining_parts = tokens[visibility_index + 1 : -1]
+	if len(remaining_parts) < 4:
+		errors.append(f"{item_label}: topic name must include object, event, processing stage, and data format before version.")
 		return errors
 
 	event = remaining_parts[1]
 	processing_stage = remaining_parts[2]
+	data_format = remaining_parts[3]
+	optional_free_text_parts = remaining_parts[4:]
 
 	if event not in valid_events:
 		errors.append(f"{item_label}: event '{event}' is not valid.")
 
 	if processing_stage not in valid_processing_stages:
 		errors.append(f"{item_label}: processing stage '{processing_stage}' is not valid.")
+
+	if data_format not in valid_data_formats:
+		errors.append(f"{item_label}: data format '{data_format}' is not valid.")
+
+	try:
+		free_text_pattern = re.compile(free_text_part_regex)
+	except re.error as error:
+		errors.append(f"Property 'TOPIC_FREE_TEXT_PART_REGEX' is invalid: {error}.")
+		return errors
+
+	for free_text_part in optional_free_text_parts:
+		if not free_text_pattern.fullmatch(free_text_part):
+			errors.append(f"{item_label}: optional free text part '{free_text_part}' does not match '{free_text_part_regex}'.")
 
 	return errors
 
