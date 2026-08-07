@@ -1,2 +1,5 @@
-schema_registry_id         = "lsrc-pgr69ro"
-catalog_rest_endpoint      = "https://pkc-lgwgm.eastus2.azure.confluent.cloud:443"
+environment_id      = "env-ywd7ro"
+kafka_cluster_id    = "lkc-gqn5wn3"
+kafka_rest_endpoint = "https://pkc-lgwgm.eastus2.azure.confluent.cloud:443"
+schema_registry_id    = "lsrc-pgr69ro"
+catalog_rest_endpoint = "https://psrc-40382p5.eastus2.azure.confluent.cloud"

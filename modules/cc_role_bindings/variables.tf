@@ -14,11 +14,6 @@ variable "elc_mod_identity_pool_role_bindings" {
   }))
 
   validation {
-    condition = length(var.elc_mod_identity_pool_role_bindings) >= 1
-    error_message = "At least one role binding must be provided."
-  }
-
-  validation {
     condition = alltrue([
       for _, v in var.elc_mod_identity_pool_role_bindings :
       contains([

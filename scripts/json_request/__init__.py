@@ -1,0 +1,1 @@
+"""JSON request validation helpers for Confluent Cloud catalog updates."""

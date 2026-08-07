@@ -37,4 +37,8 @@ resource "confluent_role_binding" "pool_binding" {
   )
 
   disable_wait_for_ready = each.value.disable_wait_for_ready
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }

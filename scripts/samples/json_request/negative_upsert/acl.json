@@ -1,0 +1,38 @@
+{
+  "": {
+    "resource_type": "",
+    "resource_name": "",
+    "pattern_type": "",
+    "principal": "",
+    "operation": "",
+    "permission": ""
+  },
+  "acl_value_must_be_object": "not-an-object",
+  "acl_invalid_enums": {
+    "principal": "User:pool-app1-customer-read",
+    "host": "*",
+    "operation": "FETCH",
+    "permission": "GRANT",
+    "resource_type": "DATABASE",
+    "resource_name": "elc_app1_public_customer_delta_raw_json_v1",
+    "pattern_type": "WILDCARD"
+  },
+  "acl_cluster_wrong_resource_name": {
+    "principal": "User:pool-app1-admin",
+    "host": "*",
+    "operation": "DESCRIBE",
+    "permission": "ALLOW",
+    "resource_type": "CLUSTER",
+    "resource_name": "wrong-cluster-name",
+    "pattern_type": "LITERAL"
+  },
+  "acl_blank_host": {
+    "principal": "User:pool-app1-customer-read",
+    "host": "",
+    "operation": "READ",
+    "permission": "ALLOW",
+    "resource_type": "TOPIC",
+    "resource_name": "elc_app1_public_customer_delta_raw_json_v1",
+    "pattern_type": "LITERAL"
+  }
+}
