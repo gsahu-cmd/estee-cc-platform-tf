@@ -11,9 +11,4 @@ variable "elc_mod_oidc_identity_pools" {
     identity_claim = string
     filter         = string
   }))
-
-  validation {
-    condition     = length(var.elc_mod_oidc_identity_pools) >= 1
-    error_message = "At least one identity pool must be provided."
-  }
 }

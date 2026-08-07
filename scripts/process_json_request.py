@@ -28,6 +28,7 @@ from json_request.common import (
 	target_topic_stack_dir,
 )
 from json_request.identity_pool_validator import validate_identity_pool
+from json_request.identity_pool_generator import identity_pool_stack_dir, update_identity_pool_generated_files
 from json_request.rbac_validator import validate_rbac
 from json_request.topic_generator import update_topic_generated_files
 from json_request.topic_validator import validate_topics
@@ -92,7 +93,7 @@ def validate_process_config(process_config: dict[str, str]) -> list[str]:
 	git_enabled = parse_bool_property(process_config, "GIT_ENABLED")
 
 	if git_enabled:
-		errors.append("GIT_ENABLED=true is not supported yet. Current script is validation-only.")
+		errors.append("GIT_ENABLED=true is not supported yet. Current script does not implement Git operations.")
 
 	return errors
 
@@ -152,7 +153,12 @@ def validate_input_files(args: argparse.Namespace, target_dir: Path, input_files
 			continue
 
 		validator = VALIDATORS[request_type]
-		errors.extend(validator(payload, args.mode, target_dir, properties))
+		validator_target_dir = (
+			identity_pool_stack_dir(REPO_ROOT, args.platform_environment)
+			if request_type == "identity_pool"
+			else target_dir
+		)
+		errors.extend(validator(payload, args.mode, validator_target_dir, properties))
 
 	return errors
 
@@ -162,6 +168,7 @@ def update_generated_files(args: argparse.Namespace, target_dir: Path, input_fil
 	updated_files: list[Path] = []
 	errors: list[str] = []
 	topics_file = input_files.get("topics.json")
+	identity_pool_file = input_files.get("identity-pool.json")
 
 	if topics_file:
 		property_file = config_file_for("topic", args.platform_environment)
@@ -172,8 +179,18 @@ def update_generated_files(args: argparse.Namespace, target_dir: Path, input_fil
 		except (FileNotFoundError, ValueError) as error:
 			errors.append(str(error))
 
+	if identity_pool_file:
+		property_file = config_file_for("identity_pool", args.platform_environment)
+		try:
+			properties = load_properties(property_file)
+			payload = load_json_file(identity_pool_file)
+			identity_pool_dir = identity_pool_stack_dir(REPO_ROOT, args.platform_environment)
+			updated_files.extend(update_identity_pool_generated_files(payload, args.mode, identity_pool_dir, properties))
+		except (FileNotFoundError, ValueError) as error:
+			errors.append(str(error))
+
 	for file_name in sorted(input_files):
-		if file_name != "topics.json":
+		if file_name not in {"topics.json", "identity-pool.json"}:
 			logging.info("Generation for %s is not implemented in this step; validation only.", file_name)
 
 	return updated_files, errors

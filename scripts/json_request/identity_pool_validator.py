@@ -7,6 +7,8 @@ import re
 from pathlib import Path
 from typing import Any
 
+from json_request.common import load_existing_json, validate_delete_keys
+
 
 def validate_identity_pool_name(
 	pool_name: Any,
@@ -30,6 +32,8 @@ def validate_identity_pool_name(
 
 def validate_identity_pool_delete(
 	data: Any,
+	target_dir: Path,
+	properties: dict[str, str],
 	name_pattern: re.Pattern[str],
 	name_regex: str,
 	required_prefix: str,
@@ -54,6 +58,10 @@ def validate_identity_pool_delete(
 			)
 		)
 
+	if not errors:
+		generated_file = target_dir / properties.get("GENERATED_IDENTITY_POOL_FILE", "files/elc-identity-pools.json")
+		errors.extend(validate_delete_keys(data, load_existing_json(generated_file), "identity-pool.json"))
+
 	return errors
 
 
@@ -69,7 +77,7 @@ def validate_identity_pool(data: Any, mode: str, target_dir: Path, properties: d
 		return [f"Property 'IDENTITY_POOL_NAME_REGEX' is invalid: {error}."]
 
 	if mode == "DELETE":
-		return validate_identity_pool_delete(data, name_pattern, name_regex, required_prefix)
+		return validate_identity_pool_delete(data, target_dir, properties, name_pattern, name_regex, required_prefix)
 
 	if not isinstance(data, dict) or not data:
 		return ["identity-pool.json: UPSERT payload must be a non-empty JSON object keyed by identity pool name."]
@@ -82,5 +90,10 @@ def validate_identity_pool(data: Any, mode: str, target_dir: Path, properties: d
 
 		if not isinstance(pool, dict):
 			errors.append(f"{item_label}: UPSERT value must be an object.")
+			continue
+
+		for required_field in ("display_name", "description", "identity_claim", "filter"):
+			if not isinstance(pool.get(required_field), str) or not pool.get(required_field, "").strip():
+				errors.append(f"{item_label}: {required_field} is mandatory.")
 
 	return errors

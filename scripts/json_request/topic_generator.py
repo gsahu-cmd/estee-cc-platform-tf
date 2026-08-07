@@ -66,6 +66,35 @@ def attributes_from_topic(topic: dict[str, Any]) -> dict[str, str]:
 	return attributes
 
 
+def topic_mentions_attributes(topic: dict[str, Any]) -> bool:
+	"""Return whether the request explicitly mentions catalog attributes."""
+	return any(field_name in topic for field_name in TOPIC_ATTRIBUTE_FIELDS)
+
+
+def apply_topic_attributes(topic_name: str, topic: dict[str, Any], attributes_by_topic: dict[str, Any]) -> None:
+	"""Apply explicitly mentioned catalog attribute changes for one topic."""
+	existing_attributes = attributes_by_topic.get(topic_name, {})
+	if not isinstance(existing_attributes, dict):
+		existing_attributes = {}
+
+	updated_attributes = dict(existing_attributes)
+
+	for field_name in TOPIC_ATTRIBUTE_FIELDS:
+		if field_name not in topic:
+			continue
+
+		value = topic.get(field_name)
+		if isinstance(value, str) and value.strip():
+			updated_attributes[field_name] = value.strip()
+		else:
+			updated_attributes.pop(field_name, None)
+
+	if updated_attributes:
+		attributes_by_topic[topic_name] = updated_attributes
+	else:
+		attributes_by_topic.pop(topic_name, None)
+
+
 def upsert_topics(request_data: dict[str, Any], target_dir: Path, properties: dict[str, str]) -> list[Path]:
 	"""Apply UPSERT topic requests to generated Terraform JSON files."""
 	topic_file = topic_file_path(target_dir, properties, "GENERATED_TOPIC_FILE", "files/elc-topics.json")
@@ -78,8 +107,14 @@ def upsert_topics(request_data: dict[str, Any], target_dir: Path, properties: di
 	)
 
 	topics = load_existing_json(topic_file)
-	tags_by_topic = topic_tags_to_map(load_topic_tags(tags_file))
-	attributes_by_topic = load_existing_json(attributes_file)
+	should_update_tags = any(isinstance(topic, dict) and "tags" in topic for topic in request_data.values())
+	should_update_attributes = any(
+		isinstance(topic, dict) and topic_mentions_attributes(topic)
+		for topic in request_data.values()
+	)
+	tags_by_topic = topic_tags_to_map(load_topic_tags(tags_file)) if should_update_tags else {}
+	attributes_by_topic = load_existing_json(attributes_file) if should_update_attributes else {}
+	updated_files = [topic_file]
 
 	for topic_name, topic in request_data.items():
 		if not isinstance(topic, dict):
@@ -90,23 +125,25 @@ def upsert_topics(request_data: dict[str, Any], target_dir: Path, properties: di
 			"partitions_count": topic.get("partitions_count"),
 		}
 
-		tags = topic.get("tags") or []
-		if tags:
-			tags_by_topic[topic_name] = [tag.strip() for tag in tags if isinstance(tag, str) and tag.strip()]
-		else:
-			tags_by_topic.pop(topic_name, None)
+		if should_update_tags and "tags" in topic:
+			tags = topic.get("tags") or []
+			if tags:
+				tags_by_topic[topic_name] = [tag.strip() for tag in tags if isinstance(tag, str) and tag.strip()]
+			else:
+				tags_by_topic.pop(topic_name, None)
 
-		attributes = attributes_from_topic(topic)
-		if attributes:
-			attributes_by_topic[topic_name] = attributes
-		else:
-			attributes_by_topic.pop(topic_name, None)
+		if should_update_attributes and topic_mentions_attributes(topic):
+			apply_topic_attributes(topic_name, topic, attributes_by_topic)
 
 	write_json_file(topic_file, topics)
-	write_json_file(tags_file, {"topic_tags": topic_tags_to_list(tags_by_topic)})
-	write_json_file(attributes_file, attributes_by_topic)
+	if should_update_tags:
+		write_json_file(tags_file, {"topic_tags": topic_tags_to_list(tags_by_topic)})
+		updated_files.append(tags_file)
+	if should_update_attributes:
+		write_json_file(attributes_file, attributes_by_topic)
+		updated_files.append(attributes_file)
 
-	return [topic_file, tags_file, attributes_file]
+	return updated_files
 
 
 def delete_topics(request_data: list[Any], target_dir: Path, properties: dict[str, str]) -> list[Path]:
@@ -121,8 +158,9 @@ def delete_topics(request_data: list[Any], target_dir: Path, properties: dict[st
 	)
 
 	topics = load_existing_json(topic_file)
-	tags_by_topic = topic_tags_to_map(load_topic_tags(tags_file))
-	attributes_by_topic = load_existing_json(attributes_file)
+	tags_by_topic = topic_tags_to_map(load_topic_tags(tags_file)) if tags_file.exists() else {}
+	attributes_by_topic = load_existing_json(attributes_file) if attributes_file.exists() else {}
+	updated_files = [topic_file]
 
 	for topic_name in request_data:
 		if not isinstance(topic_name, str):
@@ -133,10 +171,14 @@ def delete_topics(request_data: list[Any], target_dir: Path, properties: dict[st
 		attributes_by_topic.pop(topic_name, None)
 
 	write_json_file(topic_file, topics)
-	write_json_file(tags_file, {"topic_tags": topic_tags_to_list(tags_by_topic)})
-	write_json_file(attributes_file, attributes_by_topic)
+	if tags_file.exists():
+		write_json_file(tags_file, {"topic_tags": topic_tags_to_list(tags_by_topic)})
+		updated_files.append(tags_file)
+	if attributes_file.exists():
+		write_json_file(attributes_file, attributes_by_topic)
+		updated_files.append(attributes_file)
 
-	return [topic_file, tags_file, attributes_file]
+	return updated_files
 
 
 def update_topic_generated_files(

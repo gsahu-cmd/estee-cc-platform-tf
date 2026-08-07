@@ -1,0 +1,46 @@
+{
+  "elc_app1_public_customer_delta_raw_json_v1": {
+    "partitions_count": 10,
+    "config": {
+      "cleanup.policy": "delete",
+      "retention.ms": "86400000"
+    },
+    "tags": [
+      "Environment",
+      "Owner"
+    ],
+    "owner": "ELC Customer Team",
+    "ownerEmail": "elc-customer-team@example.com",
+    "description": "Updated partition count for customer delta raw JSON topic"
+  },
+  "elc_enterprise_public_payment_transaction_canonical_json_v2": {
+    "partitions_count": 6,
+    "config": {
+      "cleanup.policy": "delete",
+      "retention.ms": "172800000"
+    },
+    "tags": [
+      "Environment"
+    ],
+    "owner": "ELC Payment Team",
+    "ownerEmail": "elc-payment-team@example.com",
+    "description": "Updated retention for enterprise payment canonical JSON topic"
+  },
+  "elc_app1_public_customer_delta_raw_json_customerfeed_v1": {
+    "partitions_count": 6,
+    "config": {
+      "cleanup.policy": "delete",
+      "retention.ms": "86400000"
+    },
+    "owner": "ELC Customer Team",
+    "ownerEmail": "elc-customer-team@example.com",
+    "description": "New customer feed topic"
+  },
+  "elc_enterprise_public_payment_transaction_canonical_json_paymentfeed_v1": {
+    "partitions_count": 6,
+    "config": {
+      "cleanup.policy": "delete",
+      "retention.ms": "86400000"
+    }
+  }
+}
