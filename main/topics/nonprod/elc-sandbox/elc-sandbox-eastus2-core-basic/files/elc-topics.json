@@ -1,4 +1,11 @@
 {
+  "elc_app1_public_customer_delta_raw_json_customerfeed_v1": {
+    "config": {
+      "cleanup.policy": "delete",
+      "retention.ms": "86400000"
+    },
+    "partitions_count": 6
+  },
   "elc_app1_public_customer_delta_raw_json_v1": {
     "config": {
       "cleanup.policy": "delete",
@@ -38,6 +45,13 @@
     "config": {
       "cleanup.policy": "delete",
       "retention.ms": "86400000"
+    },
+    "partitions_count": 6
+  },
+  "elc_enterprise_public_payment_transaction_canonical_json_v2": {
+    "config": {
+      "cleanup.policy": "delete",
+      "retention.ms": "172800000"
     },
     "partitions_count": 6
   },
