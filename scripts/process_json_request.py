@@ -16,9 +16,13 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
 CONFIG_DIR = SCRIPT_DIR / "config"
 PROCESS_CONFIG_FILE = CONFIG_DIR / "process_json_request.properties"
+GIT_SCRIPT_DIR = SCRIPT_DIR / "git"
 
 if str(SCRIPT_DIR) not in sys.path:
 	sys.path.insert(0, str(SCRIPT_DIR))
+
+if str(GIT_SCRIPT_DIR) not in sys.path:
+	sys.path.insert(0, str(GIT_SCRIPT_DIR))
 
 from json_request.acl_validator import validate_acl
 from json_request.common import (
@@ -34,6 +38,7 @@ from json_request.identity_pool_generator import identity_pool_stack_dir, update
 from json_request.rbac_validator import validate_rbac
 from json_request.topic_generator import update_topic_generated_files
 from json_request.topic_validator import validate_topics
+from git_json_request import commit_and_push_git_changes, prepare_git_branch
 
 
 Validator = Callable[[Any, str, Path, dict[str, str]], list[str]]
@@ -93,10 +98,16 @@ def validate_process_config(process_config: dict[str, str]) -> list[str]:
 	"""Validate supported root-level process settings."""
 	errors: list[str] = []
 	git_enabled = parse_bool_property(process_config, "GIT_ENABLED")
+	git_pr_enabled = parse_bool_property(process_config, "GIT_PR_ENABLED")
 	archive_root = process_config.get("ARCHIVE_ROOT", "").strip()
 
 	if git_enabled:
-		errors.append("GIT_ENABLED=true is not supported yet. Current script does not implement Git operations.")
+		for required_key in ("GIT_REPO_URL", "GIT_REMOTE_NAME", "GIT_BASE_BRANCH", "GIT_BRANCH_PREFIX", "GIT_COMMIT_MESSAGE_PREFIX"):
+			if not process_config.get(required_key, "").strip():
+				errors.append(f"{required_key} is mandatory when GIT_ENABLED=true.")
+
+	if git_pr_enabled:
+		errors.append("GIT_PR_ENABLED=true is not supported yet. Current script does not implement PR creation.")
 
 	if parse_bool_property(process_config, "ARCHIVE_ENABLED", default=True) and not archive_root:
 		errors.append("ARCHIVE_ROOT is mandatory when ARCHIVE_ENABLED=true.")
@@ -130,23 +141,26 @@ def archive_input_files(
 	args: argparse.Namespace,
 	process_config: dict[str, str],
 	input_files: dict[str, Path],
-) -> tuple[Path | None, list[str]]:
+) -> tuple[Path | None, list[Path], list[str]]:
 	"""Move processed input files to a timestamped archive directory."""
 	if not parse_bool_property(process_config, "ARCHIVE_ENABLED", default=True):
 		logging.info("Input archive is disabled by process config.")
-		return None, []
+		return None, [], []
 
 	archive_root = resolve_process_path(process_config.get("ARCHIVE_ROOT", "scripts/archive"))
 	archive_dir = timestamped_archive_dir(archive_root, args)
+	archived_files: list[Path] = []
 
 	try:
 		archive_dir.mkdir(parents=True, exist_ok=False)
 		for file_name, file_path in sorted(input_files.items()):
-			shutil.move(str(file_path), str(archive_dir / file_name))
+			archived_file = archive_dir / file_name
+			shutil.move(str(file_path), str(archived_file))
+			archived_files.append(archived_file)
 	except OSError as error:
-		return None, [f"Failed to archive input files to {archive_dir}: {error}"]
+		return None, [], [f"Failed to archive input files to {archive_dir}: {error}"]
 
-	return archive_dir, []
+	return archive_dir, archived_files, []
 
 
 def validate_run_scope(args: argparse.Namespace) -> tuple[Path, list[str]]:
@@ -275,15 +289,33 @@ def main() -> int:
 	if not errors:
 		errors.extend(validate_input_files(args, target_dir, input_files))
 
+	branch_name: str | None = None
+	if not errors:
+		branch_name, git_errors = prepare_git_branch(REPO_ROOT, args, process_config)
+		errors.extend(git_errors)
+
 	updated_files: list[Path] = []
 	archive_dir: Path | None = None
+	archived_files: list[Path] = []
 	if not errors:
 		updated_files, update_errors = update_generated_files(args, target_dir, input_files)
 		errors.extend(update_errors)
 
 	if not errors:
-		archive_dir, archive_errors = archive_input_files(args, process_config, input_files)
+		archive_dir, archived_files, archive_errors = archive_input_files(args, process_config, input_files)
 		errors.extend(archive_errors)
+
+	if not errors:
+		git_errors = commit_and_push_git_changes(
+			REPO_ROOT,
+			args,
+			process_config,
+			branch_name,
+			updated_files,
+			archived_files,
+			input_files,
+		)
+		errors.extend(git_errors)
 
 	if errors:
 		logging.error("Validation failed with %s error(s).", len(errors))
@@ -300,6 +332,8 @@ def main() -> int:
 
 	if archive_dir:
 		logging.info("Archived input files to: %s", archive_dir.relative_to(REPO_ROOT))
+	if branch_name:
+		logging.info("Git branch pushed: %s", branch_name)
 	return 0
 
 
