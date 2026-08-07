@@ -82,6 +82,15 @@ def load_existing_json(file_path: Path) -> dict[str, Any]:
 	return data
 
 
+def write_json_file(file_path: Path, data: Any) -> None:
+	"""Write generated JSON with stable formatting."""
+	file_path.parent.mkdir(parents=True, exist_ok=True)
+
+	with file_path.open("w", encoding="utf-8") as file_handle:
+		json.dump(data, file_handle, indent=2, sort_keys=True)
+		file_handle.write("\n")
+
+
 def discover_input_files(input_dir: Path) -> tuple[dict[str, Path], list[str]]:
 	"""Find allowed JSON request files in the input directory."""
 	errors: list[str] = []

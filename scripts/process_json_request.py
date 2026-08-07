@@ -29,6 +29,7 @@ from json_request.common import (
 )
 from json_request.identity_pool_validator import validate_identity_pool
 from json_request.rbac_validator import validate_rbac
+from json_request.topic_generator import update_topic_generated_files
 from json_request.topic_validator import validate_topics
 
 
@@ -156,6 +157,28 @@ def validate_input_files(args: argparse.Namespace, target_dir: Path, input_files
 	return errors
 
 
+def update_generated_files(args: argparse.Namespace, target_dir: Path, input_files: dict[str, Path]) -> tuple[list[Path], list[str]]:
+	"""Update generated Terraform JSON files for implemented request types."""
+	updated_files: list[Path] = []
+	errors: list[str] = []
+	topics_file = input_files.get("topics.json")
+
+	if topics_file:
+		property_file = config_file_for("topic", args.platform_environment)
+		try:
+			properties = load_properties(property_file)
+			payload = load_json_file(topics_file)
+			updated_files.extend(update_topic_generated_files(payload, args.mode, target_dir, properties))
+		except (FileNotFoundError, ValueError) as error:
+			errors.append(str(error))
+
+	for file_name in sorted(input_files):
+		if file_name != "topics.json":
+			logging.info("Generation for %s is not implemented in this step; validation only.", file_name)
+
+	return updated_files, errors
+
+
 def main() -> int:
 	"""Run validation for one set of JSON request files."""
 	setup_logging()
@@ -184,6 +207,11 @@ def main() -> int:
 	if not errors:
 		errors.extend(validate_input_files(args, target_dir, input_files))
 
+	updated_files: list[Path] = []
+	if not errors:
+		updated_files, update_errors = update_generated_files(args, target_dir, input_files)
+		errors.extend(update_errors)
+
 	if errors:
 		logging.error("Validation failed with %s error(s).", len(errors))
 		for error in errors:
@@ -191,7 +219,11 @@ def main() -> int:
 		return 1
 
 	logging.info("Validation successful. Valid input files: %s", ", ".join(sorted(input_files)))
-	logging.info("No generated Terraform JSON files were changed in this validation-only step.")
+	if updated_files:
+		for file_path in sorted(set(updated_files)):
+			logging.info("Updated generated file: %s", file_path.relative_to(REPO_ROOT))
+	else:
+		logging.info("No generated Terraform JSON files were changed in this step.")
 	return 0
 
 
