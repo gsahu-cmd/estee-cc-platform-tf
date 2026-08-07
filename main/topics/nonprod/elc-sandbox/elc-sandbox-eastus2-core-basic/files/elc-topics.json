@@ -51,7 +51,7 @@
   "elc_enterprise_public_payment_transaction_canonical_json_v2": {
     "config": {
       "cleanup.policy": "delete",
-      "retention.ms": "172800000"
+      "retention.ms": "86400000"
     },
     "partitions_count": 6
   },

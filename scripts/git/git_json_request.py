@@ -83,6 +83,26 @@ def validate_configured_remote(repo_root: Path, process_config: dict[str, str]) 
 	return []
 
 
+def validate_clean_tracked_worktree(repo_root: Path) -> list[str]:
+	"""Ensure tracked local changes will not be overwritten by branch checkout."""
+	changed_files: set[str] = set()
+
+	for command in (["diff", "--name-only"], ["diff", "--cached", "--name-only"]):
+		output, errors = run_git_command(repo_root, command)
+		if errors:
+			return errors
+		changed_files.update(line.strip() for line in output.splitlines() if line.strip())
+
+	if not changed_files:
+		return []
+
+	changed_file_list = ", ".join(sorted(changed_files))
+	return [
+		"Tracked local changes exist before Git branch creation. Commit, stash, or reset them first. "
+		f"Changed tracked file(s): {changed_file_list}"
+	]
+
+
 def prepare_git_branch(
 	repo_root: Path,
 	args: Namespace,
@@ -99,6 +119,10 @@ def prepare_git_branch(
 	remote_errors = validate_configured_remote(repo_root, process_config)
 	if remote_errors:
 		return None, remote_errors
+
+	worktree_errors = validate_clean_tracked_worktree(repo_root)
+	if worktree_errors:
+		return None, worktree_errors
 
 	logging.info("Preparing Git branch '%s' from %s/%s.", branch_name, remote_name, base_branch)
 	_, errors = run_git_command(repo_root, ["fetch", remote_name, base_branch])
@@ -123,6 +147,18 @@ def relative_git_paths(repo_root: Path, paths: list[Path]) -> list[str]:
 	return relative_paths
 
 
+def tracked_git_paths(repo_root: Path, paths: list[str]) -> tuple[list[str], list[str]]:
+	"""Return the subset of paths that Git already tracks."""
+	if not paths:
+		return [], []
+
+	output, errors = run_git_command(repo_root, ["ls-files", "--", *paths])
+	if errors:
+		return [], errors
+
+	return [line.strip() for line in output.splitlines() if line.strip()], []
+
+
 def commit_and_push_git_changes(
 	repo_root: Path,
 	args: Namespace,
@@ -144,13 +180,17 @@ def commit_and_push_git_changes(
 	if errors:
 		return errors
 
-	input_dirs = sorted(set(relative_git_paths(repo_root, [path.parent for path in input_files.values()])))
-	if input_dirs:
-		_, errors = run_git_command(repo_root, ["add", "-u", "--", *input_dirs])
+	input_paths = sorted(set(relative_git_paths(repo_root, list(input_files.values()))))
+	tracked_input_paths, errors = tracked_git_paths(repo_root, input_paths)
+	if errors:
+		return errors
+
+	if tracked_input_paths:
+		_, errors = run_git_command(repo_root, ["add", "-u", "--", *tracked_input_paths])
 		if errors:
 			return errors
 
-	status_paths = sorted(set(paths_to_stage + input_dirs))
+	status_paths = sorted(set(paths_to_stage + tracked_input_paths))
 	status_output, errors = run_git_command(repo_root, ["status", "--porcelain", "--", *status_paths])
 	if errors:
 		return errors
