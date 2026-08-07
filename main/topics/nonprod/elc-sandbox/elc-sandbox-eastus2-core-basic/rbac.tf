@@ -18,4 +18,5 @@ module "cc_role_bindings" {
   source = "../../../../../modules/cc_role_bindings"
 
   elc_mod_identity_pool_role_bindings = local.elc_rbac_bindings_with_context
+  depends_on = [module.topic_creation]
 }

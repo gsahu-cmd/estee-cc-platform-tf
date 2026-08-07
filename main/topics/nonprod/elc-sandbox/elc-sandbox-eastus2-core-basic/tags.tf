@@ -18,4 +18,5 @@ module "cc_tags_bindings" {
   elc_mod_topic_tag_bindings = local.elc_topic_tag_bindings
   elc_mod_schema_registry_id = var.schema_registry_id
   elc_mod_kafka_cluster_id   = data.confluent_kafka_cluster.cc_cluster.id
+  depends_on = [module.topic_creation]
 }

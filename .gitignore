@@ -12,3 +12,9 @@ terraform.rc
 # Python cache files
 __pycache__/
 *.py[cod]
+
+
+# Terraform plan files
+tfplan
+*.tfplan
+*.tfplan.json

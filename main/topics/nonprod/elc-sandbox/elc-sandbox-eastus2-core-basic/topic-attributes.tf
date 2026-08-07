@@ -8,4 +8,5 @@ module "cc_topic_catalog_attributes" {
 
   elc_mod_topic_catalog_attributes = local.elc_topic_attributes
   elc_mod_kafka_cluster_id         = data.confluent_kafka_cluster.cc_cluster.id
+  depends_on = [module.topic_creation]
 }
