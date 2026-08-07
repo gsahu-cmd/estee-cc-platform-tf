@@ -38,7 +38,7 @@ from json_request.identity_pool_generator import identity_pool_stack_dir, update
 from json_request.rbac_validator import validate_rbac
 from json_request.topic_generator import update_topic_generated_files
 from json_request.topic_validator import validate_topics
-from git_json_request import commit_and_push_git_changes, prepare_git_branch
+from git_json_request import commit_and_push_git_changes, create_pull_request, prepare_git_branch
 
 
 Validator = Callable[[Any, str, Path, dict[str, str]], list[str]]
@@ -106,8 +106,8 @@ def validate_process_config(process_config: dict[str, str]) -> list[str]:
 			if not process_config.get(required_key, "").strip():
 				errors.append(f"{required_key} is mandatory when GIT_ENABLED=true.")
 
-	if git_pr_enabled:
-		errors.append("GIT_PR_ENABLED=true is not supported yet. Current script does not implement PR creation.")
+	if git_pr_enabled and not git_enabled:
+		errors.append("GIT_ENABLED=true is mandatory when GIT_PR_ENABLED=true.")
 
 	if parse_bool_property(process_config, "ARCHIVE_ENABLED", default=True) and not archive_root:
 		errors.append("ARCHIVE_ROOT is mandatory when ARCHIVE_ENABLED=true.")
@@ -297,6 +297,7 @@ def main() -> int:
 	updated_files: list[Path] = []
 	archive_dir: Path | None = None
 	archived_files: list[Path] = []
+	pull_request_url: str | None = None
 	if not errors:
 		updated_files, update_errors = update_generated_files(args, target_dir, input_files)
 		errors.extend(update_errors)
@@ -317,6 +318,17 @@ def main() -> int:
 		)
 		errors.extend(git_errors)
 
+	if not errors:
+		pull_request_url, pr_errors = create_pull_request(
+			REPO_ROOT,
+			args,
+			process_config,
+			branch_name,
+			updated_files,
+			archived_files,
+		)
+		errors.extend(pr_errors)
+
 	if errors:
 		logging.error("Validation failed with %s error(s).", len(errors))
 		for error in errors:
@@ -334,6 +346,8 @@ def main() -> int:
 		logging.info("Archived input files to: %s", archive_dir.relative_to(REPO_ROOT))
 	if branch_name:
 		logging.info("Git branch pushed: %s", branch_name)
+	if pull_request_url:
+		logging.info("Pull request created: %s", pull_request_url)
 	return 0
 
 

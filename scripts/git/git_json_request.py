@@ -5,7 +5,11 @@ from __future__ import annotations
 
 import logging
 import os
+import json
 import subprocess
+import urllib.error
+import urllib.parse
+import urllib.request
 from argparse import Namespace
 from datetime import datetime
 from pathlib import Path
@@ -52,9 +56,10 @@ def run_git_command(repo_root: Path, command: list[str]) -> tuple[str, list[str]
 
 def build_git_branch_name(args: Namespace, process_config: dict[str, str]) -> str:
 	"""Build a unique branch name for one JSON request run."""
-	timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-	branch_prefix = process_config.get("GIT_BRANCH_PREFIX", "json-request").strip().strip("/") or "json-request"
-	branch_suffix = f"{timestamp}_{args.mode}_{args.platform_environment}_{args.environment}_{args.cluster}"
+	timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+	branch_prefix = process_config.get("GIT_BRANCH_PREFIX", "release").strip().strip("/") or "release"
+	cluster_hint = args.cluster.rsplit("-", 1)[-1]
+	branch_suffix = f"{timestamp}-{args.mode.lower()}-{args.platform_environment}-{args.environment}-{cluster_hint}"
 	return f"{branch_prefix}/{branch_suffix}"
 
 
@@ -208,3 +213,101 @@ def commit_and_push_git_changes(
 	logging.info("Pushing Git branch '%s' to remote '%s'.", branch_name, remote_name)
 	_, errors = run_git_command(repo_root, ["push", "-u", remote_name, branch_name])
 	return errors
+
+
+def parse_github_repo(repo_url: str) -> tuple[str, str]:
+	"""Return GitHub owner and repository name from the configured repo URL."""
+	parsed_url = urllib.parse.urlparse(normalize_repo_url(repo_url))
+	path_parts = parsed_url.path.strip("/").split("/")
+
+	if parsed_url.netloc != "github.com" or len(path_parts) != 2:
+		raise ValueError("GIT_REPO_URL must point to a GitHub repository like https://github.com/org/repo.git")
+
+	return path_parts[0], path_parts[1]
+
+
+def github_token_from_environment() -> str:
+	"""Read GitHub token used for PR creation."""
+	token = os.environ.get("GITHUB_TOKEN", "").strip()
+
+	if not token:
+		raise ValueError("GITHUB_TOKEN environment variable is required when GIT_PR_ENABLED=true.")
+
+	return token
+
+
+def build_pull_request_body(args: Namespace, updated_files: list[Path], archived_files: list[Path], repo_root: Path) -> str:
+	"""Build a concise pull request body listing generated and archived files."""
+	updated_file_names = relative_git_paths(repo_root, updated_files)
+	archived_file_names = relative_git_paths(repo_root, archived_files)
+	lines = [
+		"Automated JSON request update.",
+		"",
+		f"Mode: {args.mode}",
+		f"Platform environment: {args.platform_environment}",
+		f"Environment: {args.environment}",
+		f"Cluster: {args.cluster}",
+	]
+
+	if updated_file_names:
+		lines.extend(["", "Updated generated files:"])
+		lines.extend(f"- {file_name}" for file_name in sorted(updated_file_names))
+
+	if archived_file_names:
+		lines.extend(["", "Archived input files:"])
+		lines.extend(f"- {file_name}" for file_name in sorted(archived_file_names))
+
+	return "\n".join(lines)
+
+
+def create_pull_request(
+	repo_root: Path,
+	args: Namespace,
+	process_config: dict[str, str],
+	branch_name: str | None,
+	updated_files: list[Path],
+	archived_files: list[Path],
+) -> tuple[str | None, list[str]]:
+	"""Create a GitHub pull request for the pushed JSON request branch."""
+	if not branch_name or not parse_bool_property(process_config, "GIT_PR_ENABLED"):
+		return None, []
+
+	try:
+		github_token = github_token_from_environment()
+		owner, repo_name = parse_github_repo(process_config["GIT_REPO_URL"].strip())
+	except ValueError as error:
+		return None, [str(error)]
+
+	title = f"{process_config['GIT_COMMIT_MESSAGE_PREFIX'].strip()}: {args.mode} {args.platform_environment} {args.environment}"
+	body = build_pull_request_body(args, updated_files, archived_files, repo_root)
+	payload = json.dumps(
+		{
+			"title": title,
+			"head": branch_name,
+			"base": process_config["GIT_BASE_BRANCH"].strip(),
+			"body": body,
+		}
+	).encode("utf-8")
+	request = urllib.request.Request(
+		f"https://api.github.com/repos/{owner}/{repo_name}/pulls",
+		data=payload,
+		headers={
+			"Accept": "application/vnd.github+json",
+			"Authorization": f"Bearer {github_token}",
+			"Content-Type": "application/json",
+			"User-Agent": "estee-cc-json-request-script",
+			"X-GitHub-Api-Version": "2022-11-28",
+		},
+		method="POST",
+	)
+
+	try:
+		with urllib.request.urlopen(request) as response:
+			response_data = json.loads(response.read().decode("utf-8"))
+	except urllib.error.HTTPError as error:
+		error_body = error.read().decode("utf-8")
+		return None, [f"GitHub PR creation failed with status {error.code}: {error_body}"]
+	except urllib.error.URLError as error:
+		return None, [f"GitHub PR creation failed: {error}"]
+
+	return response_data.get("html_url"), []
