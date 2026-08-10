@@ -23,15 +23,24 @@ def validate_acl(data: Any, mode: str, target_dir: Path, properties: dict[str, s
 	valid_pattern_types = parse_list_property(properties, "VALID_PATTERN_TYPES")
 	valid_operations = parse_list_property(properties, "VALID_OPERATIONS")
 	valid_permissions = parse_list_property(properties, "VALID_PERMISSIONS")
+	acl_key_prefix = properties.get("ACL_KEY_PREFIX", "").strip()
+	if not acl_key_prefix:
+		platform_environment = properties.get("VALID_PLATFORM_ENVIRONMENT", "").strip().lower()
+		acl_key_prefix = f"acl-elc-{platform_environment}" if platform_environment else "acl-"
 
 	for acl_key, acl in data.items():
 		item_label = f"acl.json[{acl_key}]"
 		if not isinstance(acl_key, str) or not acl_key.strip():
 			errors.append("acl.json: ACL keys must be non-empty strings.")
+		elif not acl_key.startswith(f"{acl_key_prefix}-"):
+			errors.append(f"{item_label}: ACL key must start with '{acl_key_prefix}-'.")
 
 		if not isinstance(acl, dict):
 			errors.append(f"{item_label}: value must be an object.")
 			continue
+
+		if "identity_pool_id" in acl:
+			errors.append(f"{item_label}: identity_pool_id is not used for ACLs. Provide the Kafka principal field instead, for example 'User:<principal-id>'.")
 
 		for required_field in ("resource_type", "resource_name", "pattern_type", "principal", "operation", "permission"):
 			if not isinstance(acl.get(required_field), str) or not acl.get(required_field, "").strip():

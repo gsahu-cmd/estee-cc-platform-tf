@@ -14,6 +14,8 @@ resource "confluent_role_binding" "pool_binding" {
     each.value.resource_kind == "kafka_cluster" ? each.value.kafka_cluster_rbac_crn :
 
     each.value.resource_kind == "topic" ? (
+      each.value.resource_name_prefix != null ?
+      "${each.value.kafka_cluster_rbac_crn}/kafka=${each.value.kafka_cluster_id}/topic=${each.value.resource_name_prefix}*" :
       "${each.value.kafka_cluster_rbac_crn}/kafka=${each.value.kafka_cluster_id}/topic=${each.value.resource_name}"
     ) :
 

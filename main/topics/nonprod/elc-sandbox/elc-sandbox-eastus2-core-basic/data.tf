@@ -1,3 +1,5 @@
+data "confluent_organization" "cc_organization" {}
+
 data "confluent_environment" "cc_environment" {
   id = var.environment_id
 }

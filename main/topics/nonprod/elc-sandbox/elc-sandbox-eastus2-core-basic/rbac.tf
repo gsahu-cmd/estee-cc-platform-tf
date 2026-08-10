@@ -8,6 +8,7 @@ locals {
         kafka_cluster_id       = data.confluent_kafka_cluster.cc_cluster.id
         kafka_cluster_rbac_crn = data.confluent_kafka_cluster.cc_cluster.rbac_crn
         environment_crn        = data.confluent_environment.cc_environment.resource_name
+        organization_crn       = data.confluent_organization.cc_organization.resource_name
       },
       binding
     )
@@ -18,5 +19,6 @@ module "cc_role_bindings" {
   source = "../../../../../modules/cc_role_bindings"
 
   elc_mod_identity_pool_role_bindings = local.elc_rbac_bindings_with_context
+
   depends_on = [module.topic_creation]
 }

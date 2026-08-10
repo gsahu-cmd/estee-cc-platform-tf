@@ -5,6 +5,7 @@ variable "elc_mod_identity_pool_role_bindings" {
     role_name                = string
     resource_kind            = string
     resource_name            = optional(string)
+    resource_name_prefix     = optional(string)
     kafka_cluster_id         = optional(string)
     kafka_cluster_rbac_crn   = optional(string)
     environment_crn          = optional(string)

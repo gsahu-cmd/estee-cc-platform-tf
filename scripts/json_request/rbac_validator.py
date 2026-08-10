@@ -20,11 +20,17 @@ def validate_rbac(data: Any, mode: str, target_dir: Path, properties: dict[str, 
 
 	errors: list[str] = []
 	valid_resource_kinds = parse_list_property(properties, "VALID_RESOURCE_KINDS")
+	rbac_key_prefix = properties.get("RBAC_KEY_PREFIX", "").strip()
+	if not rbac_key_prefix:
+		platform_environment = properties.get("VALID_PLATFORM_ENVIRONMENT", "").strip().lower()
+		rbac_key_prefix = f"rbac-elc-ip-{platform_environment}" if platform_environment else "rbac-"
 
 	for binding_key, binding in data.items():
 		item_label = f"rbac.json[{binding_key}]"
 		if not isinstance(binding_key, str) or not binding_key.strip():
 			errors.append("rbac.json: binding keys must be non-empty strings.")
+		elif not binding_key.startswith(f"{rbac_key_prefix}-"):
+			errors.append(f"{item_label}: binding key must start with '{rbac_key_prefix}-'.")
 
 		if not isinstance(binding, dict):
 			errors.append(f"{item_label}: value must be an object.")
@@ -34,11 +40,29 @@ def validate_rbac(data: Any, mode: str, target_dir: Path, properties: dict[str, 
 			if not isinstance(binding.get(required_field), str) or not binding.get(required_field, "").strip():
 				errors.append(f"{item_label}: {required_field} is mandatory.")
 
+		for optional_field in ("resource_name", "resource_name_prefix", "organization_crn", "crn_pattern_override"):
+			if optional_field in binding and binding.get(optional_field) is not None:
+				if not isinstance(binding.get(optional_field), str) or not binding.get(optional_field, "").strip():
+					errors.append(f"{item_label}: {optional_field} must be a non-empty string when provided.")
+
+		if "disable_wait_for_ready" in binding and not isinstance(binding.get("disable_wait_for_ready"), bool):
+			errors.append(f"{item_label}: disable_wait_for_ready must be true or false when provided.")
+
 		resource_kind = binding.get("resource_kind", "")
 		if resource_kind and resource_kind not in valid_resource_kinds:
 			errors.append(f"{item_label}: resource_kind '{resource_kind}' is not valid.")
 
-		if resource_kind in {"topic", "consumer_group", "transactional_id", "connector", "service_account"}:
+		if binding.get("resource_name") and binding.get("resource_name_prefix"):
+			errors.append(f"{item_label}: provide either resource_name or resource_name_prefix, not both.")
+
+		if resource_kind == "topic":
+			if not binding.get("resource_name") and not binding.get("resource_name_prefix"):
+				errors.append(f"{item_label}: resource_name or resource_name_prefix is mandatory for resource_kind 'topic'.")
+
+		if binding.get("resource_name_prefix") and resource_kind != "topic":
+			errors.append(f"{item_label}: resource_name_prefix is currently supported only for resource_kind 'topic'.")
+
+		if resource_kind in {"consumer_group", "transactional_id", "connector", "service_account"}:
 			if not isinstance(binding.get("resource_name"), str) or not binding.get("resource_name", "").strip():
 				errors.append(f"{item_label}: resource_name is mandatory for resource_kind '{resource_kind}'.")
 

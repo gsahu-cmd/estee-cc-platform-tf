@@ -92,6 +92,10 @@ def validate_identity_pool(data: Any, mode: str, target_dir: Path, properties: d
 			errors.append(f"{item_label}: UPSERT value must be an object.")
 			continue
 
+		display_name = pool.get("display_name")
+		if isinstance(display_name, str) and display_name.strip() and display_name.strip() != pool_name:
+			errors.append(f"{item_label}: display_name must match the identity pool key '{pool_name}'.")
+
 		for required_field in ("display_name", "description", "identity_claim", "filter"):
 			if not isinstance(pool.get(required_field), str) or not pool.get(required_field, "").strip():
 				errors.append(f"{item_label}: {required_field} is mandatory.")

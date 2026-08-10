@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +15,15 @@ ALLOWED_INPUT_FILES = {
 	"acl.json": "acl",
 	"identity-pool.json": "identity_pool",
 }
+
+RELEASE_INPUT_FILE_TYPES = {
+	"topics": "topics.json",
+	"rbac": "rbac.json",
+	"acl": "acl.json",
+	"identity-pool": "identity-pool.json",
+}
+
+INPUT_FILE_NAME_REGEX = re.compile(r"^release-(?P<number>[0-9]+)-elc-(?P<request_type>topics|rbac|acl|identity-pool)\.json$")
 
 
 def load_properties(property_file: Path) -> dict[str, str]:
@@ -92,7 +102,7 @@ def write_json_file(file_path: Path, data: Any) -> None:
 
 
 def discover_input_files(input_dir: Path) -> tuple[dict[str, Path], list[str]]:
-	"""Find allowed JSON request files in the input directory."""
+	"""Find release-style JSON request files in the input directory."""
 	errors: list[str] = []
 
 	if not input_dir.exists():
@@ -102,15 +112,34 @@ def discover_input_files(input_dir: Path) -> tuple[dict[str, Path], list[str]]:
 		return {}, [f"Input path is not a directory: {input_dir}"]
 
 	json_files = sorted(path for path in input_dir.iterdir() if path.is_file() and path.suffix.lower() == ".json")
-	unsupported_files = [path.name for path in json_files if path.name not in ALLOWED_INPUT_FILES]
+	allowed_files: dict[str, Path] = {}
+	unsupported_files: list[str] = []
+
+	for path in json_files:
+		match = INPUT_FILE_NAME_REGEX.fullmatch(path.name)
+		if not match:
+			unsupported_files.append(path.name)
+			continue
+
+		request_type = match.group("request_type")
+		canonical_file_name = RELEASE_INPUT_FILE_TYPES[request_type]
+		if canonical_file_name in allowed_files:
+			errors.append(
+				f"Duplicate input request type '{request_type}'. Only one {request_type} JSON file is allowed per run."
+			)
+			continue
+
+		allowed_files[canonical_file_name] = path
 
 	if unsupported_files:
-		errors.append("Unsupported input JSON file(s): " + ", ".join(unsupported_files))
-
-	allowed_files = {path.name: path for path in json_files if path.name in ALLOWED_INPUT_FILES}
+		errors.append(
+			"Unsupported input JSON file name(s): "
+			+ ", ".join(unsupported_files)
+			+ ". Expected pattern: release-<number>-elc-<topics|rbac|acl|identity-pool>.json"
+		)
 
 	if len(allowed_files) < 1:
-		errors.append("Input directory must contain at least one supported JSON file.")
+		errors.append("Input directory must contain at least one supported release-style JSON file.")
 
 	if len(allowed_files) > 4:
 		errors.append("Input directory can contain a maximum of four supported JSON files.")

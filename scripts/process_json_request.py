@@ -35,6 +35,8 @@ from json_request.common import (
 )
 from json_request.identity_pool_validator import validate_identity_pool
 from json_request.identity_pool_generator import identity_pool_stack_dir, update_identity_pool_generated_files
+from json_request.acl_generator import update_acl_generated_files
+from json_request.rbac_generator import update_rbac_generated_files
 from json_request.rbac_validator import validate_rbac
 from json_request.topic_generator import update_topic_generated_files
 from json_request.topic_validator import validate_topics
@@ -154,7 +156,7 @@ def archive_input_files(
 	try:
 		archive_dir.mkdir(parents=True, exist_ok=False)
 		for file_name, file_path in sorted(input_files.items()):
-			archived_file = archive_dir / file_name
+			archived_file = archive_dir / file_path.name
 			shutil.move(str(file_path), str(archived_file))
 			archived_files.append(archived_file)
 	except OSError as error:
@@ -234,6 +236,8 @@ def update_generated_files(args: argparse.Namespace, target_dir: Path, input_fil
 	errors: list[str] = []
 	topics_file = input_files.get("topics.json")
 	identity_pool_file = input_files.get("identity-pool.json")
+	rbac_file = input_files.get("rbac.json")
+	acl_file = input_files.get("acl.json")
 
 	if topics_file:
 		property_file = config_file_for("topic", args.platform_environment)
@@ -254,9 +258,23 @@ def update_generated_files(args: argparse.Namespace, target_dir: Path, input_fil
 		except (FileNotFoundError, ValueError) as error:
 			errors.append(str(error))
 
-	for file_name in sorted(input_files):
-		if file_name not in {"topics.json", "identity-pool.json"}:
-			logging.info("Generation for %s is not implemented in this step; validation only.", file_name)
+	if rbac_file:
+		property_file = config_file_for("rbac", args.platform_environment)
+		try:
+			properties = load_properties(property_file)
+			payload = load_json_file(rbac_file)
+			updated_files.extend(update_rbac_generated_files(payload, args.mode, target_dir, properties))
+		except (FileNotFoundError, ValueError) as error:
+			errors.append(str(error))
+
+	if acl_file:
+		property_file = config_file_for("acl", args.platform_environment)
+		try:
+			properties = load_properties(property_file)
+			payload = load_json_file(acl_file)
+			updated_files.extend(update_acl_generated_files(payload, args.mode, target_dir, properties))
+		except (FileNotFoundError, ValueError) as error:
+			errors.append(str(error))
 
 	return updated_files, errors
 
