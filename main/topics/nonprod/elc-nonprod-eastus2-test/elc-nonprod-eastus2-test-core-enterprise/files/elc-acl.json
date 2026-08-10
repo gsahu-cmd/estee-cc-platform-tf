@@ -1,0 +1,11 @@
+{
+  "acl-elc-nonprod-deny-order-created-write": {
+    "host": "*",
+    "operation": "WRITE",
+    "pattern_type": "LITERAL",
+    "permission": "DENY",
+    "principal": "User:pool-ROlGd",
+    "resource_name": "elc_orders_public_order_created_raw_avro_v1",
+    "resource_type": "TOPIC"
+  }
+}
