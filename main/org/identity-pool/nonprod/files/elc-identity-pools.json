@@ -1,1 +1,14 @@
-{}
+{
+  "elc-ip-nonprod-app1-customer-read": {
+    "description": "Identity pool for APP1 customer read access",
+    "display_name": "elc-ip-nonprod-app1-customer-read",
+    "filter": "claims.sub.startsWith(\"app1-customer-read\")",
+    "identity_claim": "claims.sub"
+  },
+  "elc-ip-nonprod-app1-payment-write": {
+    "description": "Identity pool for APP1 payment write access",
+    "display_name": "elc-ip-nonprod-app1-payment-write",
+    "filter": "claims.sub.startsWith(\"app1-payment-write\")",
+    "identity_claim": "claims.sub"
+  }
+}
