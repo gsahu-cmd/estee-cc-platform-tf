@@ -7,5 +7,4 @@ module "cc_kafka_acls" {
   source = "../../../../../modules/cc_kafka_acls"
 
   elc_mod_kafka_acls = local.elc_acls
-  depends_on = [module.topic_creation]
 }
