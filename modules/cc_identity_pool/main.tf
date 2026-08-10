@@ -9,4 +9,8 @@ resource "confluent_identity_pool" "pool" {
   description    = each.value.description
   identity_claim = each.value.identity_claim
   filter         = each.value.filter
+
+   lifecycle {
+    prevent_destroy = true
+  }
 }
