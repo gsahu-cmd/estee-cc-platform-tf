@@ -3,10 +3,37 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
 from json_request.common import load_existing_json, parse_list_property, validate_delete_keys
+
+
+def rbac_key_segment(value: str) -> str:
+	"""Return one stable lowercase segment for an RBAC binding key."""
+	return re.sub(r"[^a-z0-9]+", "-", value.strip().lower()).strip("-")
+
+
+def expected_rbac_binding_key_suffix(binding: dict[str, Any]) -> str | None:
+	"""Build the required RBAC key suffix from binding fields."""
+	resource_identifier = binding.get("resource_name") or binding.get("resource_name_prefix")
+	raw_segments = [
+		binding.get("role_name"),
+		binding.get("resource_kind"),
+	]
+
+	if resource_identifier:
+		raw_segments.append(resource_identifier)
+
+	if not all(isinstance(segment, str) and segment.strip() for segment in raw_segments):
+		return None
+
+	segments = [rbac_key_segment(segment) for segment in raw_segments]
+	if not all(segments):
+		return None
+
+	return "-".join(segments)
 
 
 def validate_rbac(data: Any, mode: str, target_dir: Path, properties: dict[str, str]) -> list[str]:
@@ -39,6 +66,17 @@ def validate_rbac(data: Any, mode: str, target_dir: Path, properties: dict[str, 
 		for required_field in ("identity_pool_id", "role_name", "resource_kind"):
 			if not isinstance(binding.get(required_field), str) or not binding.get(required_field, "").strip():
 				errors.append(f"{item_label}: {required_field} is mandatory.")
+
+		expected_binding_key_suffix = expected_rbac_binding_key_suffix(binding)
+		if expected_binding_key_suffix and isinstance(binding_key, str):
+			expected_suffix = f"-{expected_binding_key_suffix}"
+			expected_key_start = f"{rbac_key_prefix}-"
+			free_text = binding_key[len(expected_key_start):-len(expected_suffix)] if binding_key.startswith(expected_key_start) else ""
+			if not binding_key.endswith(expected_suffix) or not free_text.strip("-"):
+				errors.append(
+					f"{item_label}: binding key must use '{expected_key_start}<identity-pool-name-or-free-text>{expected_suffix}' "
+					"derived from role_name, resource_kind, and resource_name/resource_name_prefix."
+				)
 
 		for optional_field in ("resource_name", "resource_name_prefix", "organization_crn", "crn_pattern_override"):
 			if optional_field in binding and binding.get(optional_field) is not None:
