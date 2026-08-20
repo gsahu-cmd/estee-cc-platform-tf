@@ -1,1 +1,0 @@
-elc_service_account_id = "sa-8wopmd5"

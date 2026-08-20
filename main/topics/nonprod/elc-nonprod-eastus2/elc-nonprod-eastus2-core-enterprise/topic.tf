@@ -1,4 +1,5 @@
-module "confluent_kafka_topics" {
-  source = "../../../../modules/cc_topic_creation"
-  topics              = jsondecode(file("topics-elc-nonprod-eastus2-elc-nonprod-eastus2-core-enterprise.json"))
+module "topic_creation" {
+  source = "../../../../../modules/cc_topic_creation"
+
+  topics = jsondecode(file("${path.module}/files/elc-topics.json"))
 }

@@ -1,0 +1,20 @@
+{
+  "rbac-elc-ip-nonprod-webmethods-test-developerread-topic-elc_entsvc_public": {
+    "identity_pool_id": "pool-JOyGN",
+    "role_name": "DeveloperRead",
+    "resource_kind": "topic",
+    "resource_name_prefix": "elc_entsvc_public"
+  },
+  "rbac-elc-ip-nonprod-sap-developerwrite-topic-elc_entsvc_public": {
+    "identity_pool_id": "pool-AOWYq",
+    "role_name": "DeveloperWrite",
+    "resource_kind": "topic",
+    "resource_name_prefix": "elc_entsvc_public"
+  },
+  "rbac-elc-ip-nonprod-webmethods-test-developerwrite-topic-elc_entsvc_public": {
+    "identity_pool_id": "pool-JOyGN",
+    "role_name": "DeveloperWrite",
+    "resource_kind": "topic",
+    "resource_name_prefix": "elc_entsvc_public"
+  }
+}

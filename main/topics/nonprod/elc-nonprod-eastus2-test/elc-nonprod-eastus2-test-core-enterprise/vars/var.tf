@@ -1,5 +1,0 @@
-environment_id      = "env-mgzk07"
-kafka_cluster_id    = "lkc-nvo97m6"
-kafka_rest_endpoint = "https://lkc-nvo97m6.eastus2.azure.private.confluent.cloud:443"
-schema_registry_id    = "lsrc-w7o1x0g"
-catalog_rest_endpoint = "https://psrc-8qyy0.eastus2.azure.confluent.cloud"

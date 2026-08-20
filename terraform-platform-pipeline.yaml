@@ -1,0 +1,273 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pr:
+  branches:
+    include:
+      - '*'
+
+parameters:
+  - name: targetEnvironment
+    displayName: Environment
+    type: string
+    default: elc-nonprod-eastus2
+    values:
+      - elc-sandbox
+      - elc-nonprod-eastus2
+      - elc-nonprod-southeastasia
+      - elc-nonprod-uksouth
+
+  # TODO: Destroy mode is intentionally disabled until approved by the team.
+  # - name: destroy
+  #   type: boolean
+  #   default: false
+  #   displayName: 'Destroy mode for the target environment'
+
+variables:
+  - group: confluent-nonprod
+
+  - name: terraformVersion
+    value: '1.10.0'
+
+  - name: agentPool
+    value: 'CloudOps-AM-EastUS-Linux'
+
+  - name: azureServiceConnection
+    value: 'TBD'
+
+  - name: adoEnvironment
+    value: 'confluent-nonprod'
+
+stages:
+  - stage: Plan
+    displayName: 'Plan (${{ parameters.targetEnvironment }})'
+    pool:
+      name: $(agentPool)
+    jobs:
+      - job: TerraformPlan
+        displayName: 'terraform init validate plan'
+        steps:
+          - checkout: self
+            fetchDepth: 0
+            persistCredentials: true
+
+          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@1
+            displayName: 'Install Terraform $(terraformVersion)'
+            inputs:
+              terraformVersion: $(terraformVersion)
+
+          - script: |
+              set -euo pipefail
+              if [ -n "${GITHUB_PAT:-}" ]; then
+                export GIT_TERMINAL_PROMPT=0
+                git config --global credential.helper ''
+                git config --global url."https://oauth2:${GITHUB_PAT}@github.com/".insteadOf "https://github.com/"
+                echo "Git configured to use PAT for github.com"
+              else
+                echo "##vso[task.logissue type=warning]GITHUB_PAT not set - private module cloning may fail"
+              fi
+            displayName: 'Configure git credentials for module cloning'
+            env:
+              GITHUB_PAT: $(GITHUB_PAT)
+            continueOnError: true
+
+          - task: AzureCLI@2
+            displayName: 'terraform plan'
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: bash
+              addSpnToEnvironment: true
+              visibleAzLogin: false
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+
+                if [ -n "${idToken:-}" ]; then
+                  export ARM_USE_OIDC="true"
+                  export ARM_CLIENT_ID="$servicePrincipalId"
+                  export ARM_TENANT_ID="$tenantId"
+                  export ARM_OIDC_TOKEN="$idToken"
+                else
+                  export ARM_CLIENT_ID="$servicePrincipalId"
+                  export ARM_CLIENT_SECRET="$servicePrincipalKey"
+                  export ARM_TENANT_ID="$tenantId"
+                fi
+                export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+
+                WORK_DIR="main/nonprod/${{ parameters.targetEnvironment }}"
+                BACKEND_FILE="vars/${{ parameters.targetEnvironment }}-backend.tf"
+                VAR_FILE="vars/${{ parameters.targetEnvironment }}-var.tf"
+
+                if [ ! -d "$WORK_DIR" ]; then
+                  echo "##vso[task.logissue type=error]$WORK_DIR does not exist."
+                  exit 1
+                fi
+
+                if [ ! -f "$WORK_DIR/$BACKEND_FILE" ]; then
+                  echo "##vso[task.logissue type=error]$WORK_DIR/$BACKEND_FILE not found."
+                  exit 1
+                fi
+
+                if [ ! -f "$WORK_DIR/$VAR_FILE" ]; then
+                  echo "##vso[task.logissue type=error]$WORK_DIR/$VAR_FILE not found."
+                  exit 1
+                fi
+
+                pwd
+                echo "WORK_DIR=$WORK_DIR"
+                ls -la
+                ls -la "$WORK_DIR"
+                ls -la "$WORK_DIR/vars"
+
+                terraform -chdir="$WORK_DIR" init -input=false \
+                  -backend-config="$BACKEND_FILE"
+
+                terraform -chdir="$WORK_DIR" fmt -check -recursive
+
+                terraform -chdir="$WORK_DIR" validate
+
+                set +e
+                # TODO: Destroy plan path will be enabled only after formal approval.
+                # if [ "${{ parameters.destroy }}" = "True" ]; then
+                #   terraform -chdir="$WORK_DIR" plan \
+                #     -destroy \
+                #     -input=false \
+                #     -var-file="$VAR_FILE" \
+                #     -out=tfplan \
+                #     -detailed-exitcode 2>&1 | tee "$WORK_DIR/plan_output.txt"
+                # else
+                terraform -chdir="$WORK_DIR" plan \
+                  -input=false \
+                  -var-file="$VAR_FILE" \
+                  -out=tfplan \
+                  -detailed-exitcode 2>&1 | tee "$WORK_DIR/plan_output.txt"
+                # fi
+                PLAN_EXIT=${PIPESTATUS[0]}
+                set -e
+
+                if [ "$PLAN_EXIT" -eq 1 ]; then
+                  echo "##vso[task.logissue type=error]Plan failed for $WORK_DIR"
+                  exit 1
+                fi
+
+                terraform -chdir="$WORK_DIR" show -no-color tfplan > "$WORK_DIR/plan_readable.txt" 2>/dev/null || true
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish tfplan artifact'
+            condition: succeeded()
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/main/nonprod/${{ parameters.targetEnvironment }}/tfplan'
+              artifact: tfplan
+              publishLocation: pipeline
+
+  - stage: Apply
+    displayName: 'Apply (${{ parameters.targetEnvironment }})'
+    dependsOn: Plan
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    pool:
+      name: $(agentPool)
+    jobs:
+      - deployment: TerraformApply
+        displayName: 'terraform apply'
+        environment: $(adoEnvironment)
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  fetchDepth: 0
+
+                - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@1
+                  displayName: 'Install Terraform $(terraformVersion)'
+                  inputs:
+                    terraformVersion: $(terraformVersion)
+
+                - script: |
+                    set -euo pipefail
+                    if [ -n "${GITHUB_PAT:-}" ]; then
+                      export GIT_TERMINAL_PROMPT=0
+                      git config --global credential.helper ''
+                      git config --global url."https://oauth2:${GITHUB_PAT}@github.com/".insteadOf "https://github.com/"
+                      echo "Git configured to use PAT for github.com"
+                    else
+                      echo "##vso[task.logissue type=warning]GITHUB_PAT not set - private module cloning may fail"
+                    fi
+                  displayName: 'Configure git credentials for module cloning'
+                  env:
+                    GITHUB_PAT: $(GITHUB_PAT)
+                  continueOnError: true
+
+                - task: DownloadPipelineArtifact@2
+                  displayName: 'Download tfplan artifact'
+                  inputs:
+                    buildType: current
+                    artifactName: tfplan
+                    targetPath: '$(Pipeline.Workspace)/tfplan'
+
+                - task: AzureCLI@2
+                  displayName: 'terraform apply'
+                  inputs:
+                    azureSubscription: $(azureServiceConnection)
+                    scriptType: bash
+                    addSpnToEnvironment: true
+                    visibleAzLogin: false
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      set -euo pipefail
+
+                      if [ -n "${idToken:-}" ]; then
+                        export ARM_USE_OIDC="true"
+                        export ARM_CLIENT_ID="$servicePrincipalId"
+                        export ARM_TENANT_ID="$tenantId"
+                        export ARM_OIDC_TOKEN="$idToken"
+                      else
+                        export ARM_CLIENT_ID="$servicePrincipalId"
+                        export ARM_CLIENT_SECRET="$servicePrincipalKey"
+                        export ARM_TENANT_ID="$tenantId"
+                      fi
+                      export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+
+                      WORK_DIR="main/nonprod/${{ parameters.targetEnvironment }}"
+                      BACKEND_FILE="vars/${{ parameters.targetEnvironment }}-backend.tf"
+                      VAR_FILE="vars/${{ parameters.targetEnvironment }}-var.tf"
+                      DOWNLOADED_PLAN="$(Pipeline.Workspace)/tfplan/tfplan"
+
+                      if [ ! -d "$WORK_DIR" ]; then
+                        echo "##vso[task.logissue type=error]$WORK_DIR does not exist."
+                        exit 1
+                      fi
+
+                      if [ ! -f "$WORK_DIR/$BACKEND_FILE" ]; then
+                        echo "##vso[task.logissue type=error]$WORK_DIR/$BACKEND_FILE not found."
+                        exit 1
+                      fi
+
+                      if [ ! -f "$WORK_DIR/$VAR_FILE" ]; then
+                        echo "##vso[task.logissue type=error]$WORK_DIR/$VAR_FILE not found."
+                        exit 1
+                      fi
+
+                      pwd
+                      echo "WORK_DIR=$WORK_DIR"
+                      ls -la
+                      ls -la "$WORK_DIR"
+                      ls -la "$WORK_DIR/vars"
+
+                      terraform -chdir="$WORK_DIR" init -input=false \
+                        -backend-config="$BACKEND_FILE"
+
+                      # TODO: Destroy apply path will be enabled only after formal approval.
+                      # if [ "${{ parameters.destroy }}" = "True" ]; then
+                      #   terraform -chdir="$WORK_DIR" destroy -auto-approve -input=false -var-file="$VAR_FILE"
+                      # else
+                      if [ -f "$DOWNLOADED_PLAN" ]; then
+                        cp "$DOWNLOADED_PLAN" "$WORK_DIR/tfplan"
+                        terraform -chdir="$WORK_DIR" apply -input=false -auto-approve tfplan
+                      else
+                        echo "##vso[task.logissue type=warning]Plan artifact not found - running fresh apply"
+                        terraform -chdir="$WORK_DIR" apply -input=false -auto-approve -var-file="$VAR_FILE"
+                      fi
+                      # fi
+

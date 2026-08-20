@@ -1,4 +1,4 @@
-module "elc-nonprod-eastus2-cc-access-point" {
+module "elc-prod-eastus2-cc-access-point" {
   source = "../../../modules/cc_access_point_azure_ingress"
 
   elc_mod_environment_id   = module.elc-nonprod-eastus2-cc-env.environment_id

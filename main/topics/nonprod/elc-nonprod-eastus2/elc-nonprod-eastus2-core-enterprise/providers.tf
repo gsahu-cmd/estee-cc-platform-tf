@@ -23,7 +23,10 @@ provider "confluent" {
   cloud_api_key    = var.confluent_cloud_api_key
   cloud_api_secret = var.confluent_cloud_api_secret
 
-  # Required for confluent_tag
+  kafka_id                   = var.kafka_cluster_id
+  kafka_rest_endpoint        = var.kafka_rest_endpoint
+  kafka_api_key              = var.kafka_api_key
+  kafka_api_secret           = var.kafka_api_secret
   schema_registry_id         = var.schema_registry_id
   catalog_rest_endpoint      = var.catalog_rest_endpoint
   schema_registry_api_key    = var.schema_registry_api_key
