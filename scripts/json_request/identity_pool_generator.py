@@ -11,7 +11,7 @@ from json_request.common import load_existing_json, write_json_file
 
 def identity_pool_stack_dir(repo_root: Path, platform_environment: str) -> Path:
 	"""Return the identity-pool Terraform stack directory for the platform environment."""
-	return repo_root / "main" / "org" / "identity-pool" / platform_environment
+	return repo_root / "main" / "org" / "sso-ip" / platform_environment
 
 
 def identity_pool_file_path(target_dir: Path, properties: dict[str, str]) -> Path:
