@@ -14,6 +14,8 @@ ALLOWED_INPUT_FILES = {
 	"rbac.json": "rbac",
 	"acl.json": "acl",
 	"identity-pool.json": "identity_pool",
+	"group-mapping.json": "group_mapping",
+	"group-mapping-rbac.json": "group_mapping_rbac",
 }
 
 RELEASE_INPUT_FILE_TYPES = {
@@ -21,9 +23,11 @@ RELEASE_INPUT_FILE_TYPES = {
 	"rbac": "rbac.json",
 	"acl": "acl.json",
 	"identity-pool": "identity-pool.json",
+	"group-mapping": "group-mapping.json",
+	"group-mapping-rbac": "group-mapping-rbac.json",
 }
 
-INPUT_FILE_NAME_REGEX = re.compile(r"^release-(?P<number>[0-9]+)-elc-(?P<request_type>topics|rbac|acl|identity-pool)\.json$")
+INPUT_FILE_NAME_REGEX = re.compile(r"^release-(?P<number>[0-9]+)-elc-(?P<request_type>topics|rbac|acl|identity-pool|group-mapping|group-mapping-rbac)\.json$")
 
 
 def load_properties(property_file: Path) -> dict[str, str]:
@@ -135,14 +139,14 @@ def discover_input_files(input_dir: Path) -> tuple[dict[str, Path], list[str]]:
 		errors.append(
 			"Unsupported input JSON file name(s): "
 			+ ", ".join(unsupported_files)
-			+ ". Expected pattern: release-<number>-elc-<topics|rbac|acl|identity-pool>.json"
+			+ ". Expected pattern: release-<number>-elc-<topics|rbac|acl|identity-pool|group-mapping|group-mapping-rbac>.json"
 		)
 
 	if len(allowed_files) < 1:
 		errors.append("Input directory must contain at least one supported release-style JSON file.")
 
-	if len(allowed_files) > 4:
-		errors.append("Input directory can contain a maximum of four supported JSON files.")
+	if len(allowed_files) > len(ALLOWED_INPUT_FILES):
+		errors.append(f"Input directory can contain a maximum of {len(ALLOWED_INPUT_FILES)} supported JSON files.")
 
 	return allowed_files, errors
 

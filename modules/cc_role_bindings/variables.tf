@@ -1,7 +1,8 @@
-variable "elc_mod_identity_pool_role_bindings" {
-  description = "Map of role bindings for identity pools"
+variable "elc_mod_role_bindings" {
+  description = "Map of role bindings for identity pools or SSO group mappings"
   type = map(object({
-    identity_pool_id         = string
+    identity_pool_id         = optional(string)
+    group_mapping_id         = optional(string)
     role_name                = string
     resource_kind            = string
     resource_name            = optional(string)
@@ -14,10 +15,18 @@ variable "elc_mod_identity_pool_role_bindings" {
     crn_pattern_override     = optional(string)
     disable_wait_for_ready   = optional(bool, false)
   }))
- 
+
   validation {
     condition = alltrue([
-      for _, v in var.elc_mod_identity_pool_role_bindings :
+      for _, v in var.elc_mod_role_bindings :
+      (v.identity_pool_id != null) != (v.group_mapping_id != null)
+    ])
+    error_message = "Exactly one of identity_pool_id or group_mapping_id must be provided."
+  }
+
+  validation {
+    condition = alltrue([
+      for _, v in var.elc_mod_role_bindings :
       contains([
         "organization",
         "environment",

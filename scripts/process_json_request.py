@@ -35,6 +35,10 @@ from json_request.common import (
 )
 from json_request.identity_pool_validator import validate_identity_pool
 from json_request.identity_pool_generator import identity_pool_stack_dir, update_identity_pool_generated_files
+from json_request.group_mapping_validator import validate_group_mapping
+from json_request.group_mapping_generator import group_mapping_stack_dir, update_group_mapping_generated_files
+from json_request.group_mapping_rbac_validator import validate_group_mapping_rbac
+from json_request.group_mapping_rbac_generator import update_group_mapping_rbac_generated_files
 from json_request.acl_generator import update_acl_generated_files
 from json_request.rbac_generator import update_rbac_generated_files
 from json_request.rbac_validator import validate_rbac
@@ -50,6 +54,8 @@ VALIDATORS: dict[str, Validator] = {
 	"rbac": validate_rbac,
 	"acl": validate_acl,
 	"identity_pool": validate_identity_pool,
+	"group_mapping": validate_group_mapping,
+	"group_mapping_rbac": validate_group_mapping_rbac,
 }
 
 
@@ -223,6 +229,8 @@ def validate_input_files(args: argparse.Namespace, target_dir: Path, input_files
 		validator_target_dir = (
 			identity_pool_stack_dir(REPO_ROOT, args.platform_environment)
 			if request_type == "identity_pool"
+			else group_mapping_stack_dir(REPO_ROOT, args.platform_environment)
+			if request_type == "group_mapping"
 			else target_dir
 		)
 		errors.extend(validator(payload, args.mode, validator_target_dir, properties))
@@ -236,6 +244,8 @@ def update_generated_files(args: argparse.Namespace, target_dir: Path, input_fil
 	errors: list[str] = []
 	topics_file = input_files.get("topics.json")
 	identity_pool_file = input_files.get("identity-pool.json")
+	group_mapping_file = input_files.get("group-mapping.json")
+	group_mapping_rbac_file = input_files.get("group-mapping-rbac.json")
 	rbac_file = input_files.get("rbac.json")
 	acl_file = input_files.get("acl.json")
 
@@ -255,6 +265,25 @@ def update_generated_files(args: argparse.Namespace, target_dir: Path, input_fil
 			payload = load_json_file(identity_pool_file)
 			identity_pool_dir = identity_pool_stack_dir(REPO_ROOT, args.platform_environment)
 			updated_files.extend(update_identity_pool_generated_files(payload, args.mode, identity_pool_dir, properties))
+		except (FileNotFoundError, ValueError) as error:
+			errors.append(str(error))
+
+	if group_mapping_file:
+		property_file = config_file_for("group_mapping", args.platform_environment)
+		try:
+			properties = load_properties(property_file)
+			payload = load_json_file(group_mapping_file)
+			group_mapping_dir = group_mapping_stack_dir(REPO_ROOT, args.platform_environment)
+			updated_files.extend(update_group_mapping_generated_files(payload, args.mode, group_mapping_dir, properties))
+		except (FileNotFoundError, ValueError) as error:
+			errors.append(str(error))
+
+	if group_mapping_rbac_file:
+		property_file = config_file_for("group_mapping_rbac", args.platform_environment)
+		try:
+			properties = load_properties(property_file)
+			payload = load_json_file(group_mapping_rbac_file)
+			updated_files.extend(update_group_mapping_rbac_generated_files(payload, args.mode, target_dir, properties))
 		except (FileNotFoundError, ValueError) as error:
 			errors.append(str(error))
 
