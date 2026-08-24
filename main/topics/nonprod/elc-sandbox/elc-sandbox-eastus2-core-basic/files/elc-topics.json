@@ -1,1 +1,9 @@
-{}
+{
+  "elc_sales_public_order_snapshot_raw_json_v1": {
+    "config": {
+      "cleanup.policy": "delete",
+      "retention.ms": "604800000"
+    },
+    "partitions_count": 3
+  }
+}
