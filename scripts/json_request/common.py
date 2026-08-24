@@ -181,7 +181,11 @@ def discover_input_files(
 		)
 
 	if len(allowed_files) < 1:
-		errors.append("Input directory must contain at least one supported release-style JSON file.")
+		errors.append(
+			"Input directory must contain at least one supported JSON file. "
+			+ f"Expected pattern: {expected_input_file_pattern}. "
+			+ "Example: upsert-nonprod-project-ABC-release-901-elc-topics.json"
+		)
 
 	if len(allowed_files) > len(ALLOWED_INPUT_FILES):
 		errors.append(f"Input directory can contain a maximum of {len(ALLOWED_INPUT_FILES)} supported JSON files.")
