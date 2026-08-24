@@ -1,0 +1,15 @@
+{
+  "elc_sales_public_order_snapshot_raw_json_v1": {
+    "partitions_count": 3,
+    "config": {
+      "cleanup.policy": "delete",
+      "retention.ms": "604800000"
+    },
+    "tags": [
+      "Environment"
+    ],
+    "owner": "demo-team",
+    "ownerEmail": "demo-team@example.com",
+    "description": "Dummy topic request for testing topic creation."
+  }
+}
