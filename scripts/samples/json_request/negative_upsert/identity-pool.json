@@ -1,9 +1,0 @@
-{
-  "1-invalid-start": {
-    "display_name": "Invalid identity pool name"
-  },
-  "ab": {
-    "display_name": "Too short identity pool name"
-  },
-  "pool_value_must_be_object": "not-an-object"
-}

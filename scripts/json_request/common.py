@@ -28,10 +28,10 @@ RELEASE_INPUT_FILE_TYPES = {
 }
 
 DEFAULT_INPUT_FILE_NAME_REGEX = (
-	r"^(?P<mode>UPSERT|DELETE)-(?P<environment>[A-Za-z0-9-]+)-project-(?P<project>[A-Za-z0-9-]+)-"
+	r"^(?P<mode>upsert|delete|UPSERT|DELETE)-(?P<environment>[A-Za-z0-9-]+)-project-(?P<project>[A-Za-z0-9-]+)-"
 	r"release-(?P<number>[0-9]+)-elc-(?P<request_type>topics|rbac|acl|identity-pool|group-mapping|group-mapping-rbac)\.json$"
 )
-DEFAULT_INPUT_FILE_NAME_PATTERN = "<UPSERT|DELETE>-<ENV>-project-<XYZ>-release-<number>-elc-<topics|rbac|acl|identity-pool|group-mapping|group-mapping-rbac>.json"
+DEFAULT_INPUT_FILE_NAME_PATTERN = "<upsert|delete>-<ENV>-project-<XYZ>-release-<number>-elc-<topics|rbac|acl|identity-pool|group-mapping|group-mapping-rbac>.json"
 REQUIRED_INPUT_FILE_NAME_GROUPS = {"mode", "environment", "request_type"}
 
 
@@ -161,7 +161,7 @@ def discover_input_files(
 			unsupported_files.append(path.name)
 			continue
 
-		discovered_modes.add(match.group("mode"))
+		discovered_modes.add(match.group("mode").upper())
 		discovered_environments.add(match.group("environment"))
 		request_type = match.group("request_type")
 		canonical_file_name = RELEASE_INPUT_FILE_TYPES[request_type]
