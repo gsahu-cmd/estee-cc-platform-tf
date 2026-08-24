@@ -1,3 +1,10 @@
 {
-  "topic_tags": []
+  "topic_tags": [
+    {
+      "name": "elc_sales_public_order_snapshot_raw_json_v1",
+      "tags": [
+        "Environment"
+      ]
+    }
+  ]
 }

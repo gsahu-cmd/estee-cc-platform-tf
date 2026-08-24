@@ -5,6 +5,12 @@
     "filter": "'sap' in claims.aud && claims.iss == 'https://diamond-qa.elcompanies.com/as' && claims.scope == 'sap'",
     "identity_claim": "claims.client_id"
   },
+  "elc-ip-nonprod-demo-app": {
+    "description": "Dummy identity pool request for testing identity pool creation.",
+    "display_name": "elc-ip-nonprod-demo-app",
+    "filter": "claims.group == \"demo-app\"",
+    "identity_claim": "claims.sub"
+  },
   "elc-ip-nonprod-webmethod-customer-test": {
     "description": "Webmethod Identity Pool For Nonprod testing",
     "display_name": "elc-ip-nonprod-webmethod-customer-test",

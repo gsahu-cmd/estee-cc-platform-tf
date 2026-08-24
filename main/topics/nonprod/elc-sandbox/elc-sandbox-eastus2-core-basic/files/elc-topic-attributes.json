@@ -1,1 +1,7 @@
-{}
+{
+  "elc_sales_public_order_snapshot_raw_json_v1": {
+    "description": "Dummy topic request for testing topic creation.",
+    "owner": "demo-team",
+    "ownerEmail": "demo-team@example.com"
+  }
+}
