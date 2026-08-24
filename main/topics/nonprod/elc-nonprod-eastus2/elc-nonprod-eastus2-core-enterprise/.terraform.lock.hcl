@@ -6,6 +6,7 @@ provider "registry.terraform.io/confluentinc/confluent" {
   constraints = "~> 2.76"
   hashes = [
     "h1:IrrvAqHahiP0Vghl9c45oQEOibrmmOY+c+rRqiB93bM=",
+    "h1:Wly2fm9ANOCd70KiEWVtJmDYcbwFDH5ppf8KK/qN3VM=",
     "zh:0292a241e96504fb57712b4393a5e59c7b35c3df614356a843e7016af27b164c",
     "zh:0359df4040492d11b6549874e7f2d0f6a4291831e4c720b8ca8158df9dd2ef72",
     "zh:3eda225f3d1d43ab28025a096429c7bfb6e7cfb6e2eb23020a0f904e52489b04",
@@ -30,6 +31,7 @@ provider "registry.terraform.io/hashicorp/azurerm" {
   constraints = "~> 4.0"
   hashes = [
     "h1:4BEgtU/crlkbMduT7tm8Sp3+C+1RBfrpUIlTBM/wtMc=",
+    "h1:olVprUWhmFTARlydw/r7VIx4fata2gy3zsAWfPGRrhg=",
     "zh:0732e7b74264ddfa2b90ba69d01c283d3cbae9f72ed3e506c6ac92529fed7fd3",
     "zh:12afb524e232fe4e3d6161927724af5dfa4831d71edd9c174917ca9b7377bfae",
     "zh:169d619ae202c4145e02fb706fb7c3679445ab3e3ff722edbf89597517a8c92e",
