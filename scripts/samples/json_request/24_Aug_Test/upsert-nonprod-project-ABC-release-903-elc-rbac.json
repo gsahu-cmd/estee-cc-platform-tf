@@ -1,0 +1,14 @@
+{
+  "rbac-elc-ip-nonprod-SAP-test-developerread-topic-elc-sales-public-order-snapshot-raw-json-v1": {
+    "identity_pool_name": "elc-ip-nonprod-SAP-test",
+    "role_name": "DeveloperRead",
+    "resource_kind": "topic",
+    "resource_name": "elc_sales_public_order_snapshot_raw_json_v1"
+  },
+  "rbac-elc-ip-nonprod-SAP-test-developerread-consumer-group-demo-app-consumer-group": {
+    "identity_pool_name": "elc-ip-nonprod-SAP-test",
+    "role_name": "DeveloperRead",
+    "resource_kind": "consumer_group",
+    "resource_name": "demo-app-consumer-group"
+  }
+}
