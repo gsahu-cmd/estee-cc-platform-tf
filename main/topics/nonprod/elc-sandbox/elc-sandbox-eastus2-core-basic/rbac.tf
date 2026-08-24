@@ -1,8 +1,21 @@
+data "terraform_remote_state" "sso_ip" {
+  backend = "azurerm"
+
+  config = {
+    resource_group_name  = var.sso_ip_state_resource_group_name
+    storage_account_name = var.sso_ip_state_storage_account_name
+    container_name       = var.sso_ip_state_container_name
+    key                  = var.sso_ip_state_key
+  }
+}
+
 locals {
   elc_rbac_file               = "${path.module}/files/elc-rbac.json"
   elc_group_mapping_rbac_file = "${path.module}/files/elc-group-mapping-rbac.json"
   elc_rbac_bindings           = fileexists(local.elc_rbac_file) ? jsondecode(file(local.elc_rbac_file)) : {}
   elc_group_mapping_rbac      = fileexists(local.elc_group_mapping_rbac_file) ? jsondecode(file(local.elc_group_mapping_rbac_file)) : {}
+  elc_identity_pool_ids       = data.terraform_remote_state.sso_ip.outputs.identity_pool_ids
+  elc_group_mapping_ids       = data.terraform_remote_state.sso_ip.outputs.group_mapping_ids
 
   elc_rbac_bindings_with_context = {
     for binding_key, binding in local.elc_rbac_bindings : binding_key => merge(
@@ -13,7 +26,10 @@ locals {
         environment_crn        = data.confluent_environment.cc_environment.resource_name
         organization_crn       = data.confluent_organization.cc_organization.resource_name
       },
-      binding
+      binding,
+      {
+        identity_pool_id = try(binding.identity_pool_id, null) != null ? binding.identity_pool_id : local.elc_identity_pool_ids[binding.identity_pool_name]
+      }
     )
   }
 
@@ -26,7 +42,10 @@ locals {
         environment_crn        = data.confluent_environment.cc_environment.resource_name
         organization_crn       = data.confluent_organization.cc_organization.resource_name
       },
-      binding
+      binding,
+      {
+        group_mapping_id = try(binding.group_mapping_id, null) != null ? binding.group_mapping_id : local.elc_group_mapping_ids[binding.group_mapping_name]
+      }
     )
   }
 }

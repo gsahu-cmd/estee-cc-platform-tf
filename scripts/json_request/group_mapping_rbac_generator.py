@@ -11,6 +11,7 @@ from json_request.common import load_existing_json, write_json_file
 
 GROUP_MAPPING_RBAC_REQUIRED_FIELDS = ("role_name", "resource_kind")
 GROUP_MAPPING_RBAC_OPTIONAL_FIELDS = (
+	"group_mapping_name",
 	"group_mapping_id",
 	"resource_name",
 	"resource_name_prefix",

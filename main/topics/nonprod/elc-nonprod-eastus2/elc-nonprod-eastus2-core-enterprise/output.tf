@@ -10,7 +10,12 @@ output "topic_names" {
 
 output "role_binding_ids" {
   description = "Role binding IDs by key"
-  value       = module.cc_role_bindings.identity_pool_role_binding_ids
+  value       = module.cc_role_bindings.role_binding_ids
+}
+
+output "group_mapping_role_binding_ids" {
+  description = "SSO group mapping role binding IDs by key"
+  value       = module.cc_group_mapping_role_bindings.role_binding_ids
 }
 
 output "kafka_acl_ids" {

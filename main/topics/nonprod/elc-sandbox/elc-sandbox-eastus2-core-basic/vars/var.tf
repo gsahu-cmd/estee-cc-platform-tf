@@ -3,3 +3,8 @@ kafka_cluster_id    = "lkc-gqn5wn3"
 kafka_rest_endpoint = "https://pkc-lgwgm.eastus2.azure.confluent.cloud:443"
 schema_registry_id    = "lsrc-pgr69ro"
 catalog_rest_endpoint = "https://psrc-40382p5.eastus2.azure.confluent.cloud"
+
+sso_ip_state_resource_group_name  = "estee-poc-tf"
+sso_ip_state_storage_account_name = "tfstateeesteepoc"
+sso_ip_state_container_name       = "tfstate"
+sso_ip_state_key                  = "identity-pool-nonprod.terraform.tfstate"

@@ -19,7 +19,7 @@ def expected_group_mapping_rbac_key_suffix(binding: dict[str, Any]) -> str | Non
 	"""Build the required RBAC key suffix from binding fields."""
 	resource_identifier = binding.get("resource_name") or binding.get("resource_name_prefix")
 	raw_segments = [
-		binding.get("group_mapping_id"),
+		binding.get("group_mapping_name") or binding.get("group_mapping_id"),
 		binding.get("role_name"),
 		binding.get("resource_kind"),
 	]
@@ -61,9 +61,11 @@ def validate_group_mapping_rbac(data: Any, mode: str, target_dir: Path, properti
 			errors.append(f"{item_label}: value must be an object.")
 			continue
 
+
 		group_mapping_id = binding.get("group_mapping_id")
-		if not isinstance(group_mapping_id, str) or not group_mapping_id.strip():
-			errors.append(f"{item_label}: group_mapping_id must be a non-empty string when provided.")
+		group_mapping_name = binding.get("group_mapping_name")
+		if bool(group_mapping_id) == bool(group_mapping_name):
+			errors.append(f"{item_label}: provide exactly one of group_mapping_name or group_mapping_id.")
 
 		for required_field in ("role_name", "resource_kind"):
 			if not isinstance(binding.get(required_field), str) or not binding.get(required_field, "").strip():
@@ -75,7 +77,7 @@ def validate_group_mapping_rbac(data: Any, mode: str, target_dir: Path, properti
 			if binding_key != expected_key:
 				errors.append(f"{item_label}: binding key must be '{expected_key}'.")
 
-		for optional_field in ("organization_crn", "crn_pattern_override"):
+		for optional_field in ("group_mapping_name", "group_mapping_id", "resource_name", "resource_name_prefix", "organization_crn", "crn_pattern_override"):
 			if optional_field in binding and binding.get(optional_field) is not None:
 				if not isinstance(binding.get(optional_field), str) or not binding.get(optional_field, "").strip():
 					errors.append(f"{item_label}: {optional_field} must be a non-empty string when provided.")
@@ -86,5 +88,19 @@ def validate_group_mapping_rbac(data: Any, mode: str, target_dir: Path, properti
 		resource_kind = binding.get("resource_kind", "")
 		if resource_kind and resource_kind not in valid_resource_kinds:
 			errors.append(f"{item_label}: resource_kind '{resource_kind}' is not valid.")
+
+		if binding.get("resource_name") and binding.get("resource_name_prefix"):
+			errors.append(f"{item_label}: provide either resource_name or resource_name_prefix, not both.")
+
+		if resource_kind == "topic":
+			if not binding.get("resource_name") and not binding.get("resource_name_prefix"):
+				errors.append(f"{item_label}: resource_name or resource_name_prefix is mandatory for resource_kind 'topic'.")
+
+		if binding.get("resource_name_prefix") and resource_kind != "topic":
+			errors.append(f"{item_label}: resource_name_prefix is currently supported only for resource_kind 'topic'.")
+
+		if resource_kind in {"consumer_group", "transactional_id", "connector", "service_account"}:
+			if not isinstance(binding.get("resource_name"), str) or not binding.get("resource_name", "").strip():
+				errors.append(f"{item_label}: resource_name is mandatory for resource_kind '{resource_kind}'.")
 
 	return errors

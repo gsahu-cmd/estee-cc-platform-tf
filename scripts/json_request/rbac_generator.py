@@ -9,10 +9,12 @@ from typing import Any
 from json_request.common import load_existing_json, write_json_file
 
 
-RBAC_REQUIRED_FIELDS = ("identity_pool_id", "role_name", "resource_kind")
+RBAC_REQUIRED_FIELDS = ("role_name", "resource_kind")
 RBAC_OPTIONAL_FIELDS = (
+	"identity_pool_name",
 	"resource_name",
 	"resource_name_prefix",
+	"identity_pool_id",
 	"organization_crn",
 	"crn_pattern_override",
 	"disable_wait_for_ready",

@@ -63,7 +63,12 @@ def validate_rbac(data: Any, mode: str, target_dir: Path, properties: dict[str, 
 			errors.append(f"{item_label}: value must be an object.")
 			continue
 
-		for required_field in ("identity_pool_id", "role_name", "resource_kind"):
+		identity_pool_id = binding.get("identity_pool_id")
+		identity_pool_name = binding.get("identity_pool_name")
+		if bool(identity_pool_id) == bool(identity_pool_name):
+			errors.append(f"{item_label}: provide exactly one of identity_pool_name or identity_pool_id.")
+
+		for required_field in ("role_name", "resource_kind"):
 			if not isinstance(binding.get(required_field), str) or not binding.get(required_field, "").strip():
 				errors.append(f"{item_label}: {required_field} is mandatory.")
 
@@ -78,7 +83,7 @@ def validate_rbac(data: Any, mode: str, target_dir: Path, properties: dict[str, 
 					"derived from role_name, resource_kind, and resource_name/resource_name_prefix."
 				)
 
-		for optional_field in ("resource_name", "resource_name_prefix", "organization_crn", "crn_pattern_override"):
+		for optional_field in ("identity_pool_name", "identity_pool_id", "resource_name", "resource_name_prefix", "organization_crn", "crn_pattern_override"):
 			if optional_field in binding and binding.get(optional_field) is not None:
 				if not isinstance(binding.get(optional_field), str) or not binding.get(optional_field, "").strip():
 					errors.append(f"{item_label}: {optional_field} must be a non-empty string when provided.")
