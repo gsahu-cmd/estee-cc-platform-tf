@@ -1,27 +1,14 @@
 {
-  "elc-ip-nonprod-app1-customer-read": {
-    "description": "Identity pool for APP1 customer read access",
-    "display_name": "elc-ip-nonprod-app1-customer-read",
-    "filter": "claims.sub.startsWith(\"app1-customer-read\")",
-    "identity_claim": "claims.sub"
-  },
-  "elc-ip-nonprod-app1-payment-write": {
-    "description": "Identity pool for APP1 payment write access",
-    "display_name": "elc-ip-nonprod-app1-payment-write",
-    "filter": "claims.sub.startsWith(\"app1-payment-write\")",
-    "identity_claim": "claims.sub"
+  "elc-ip-nonprod-SAP-test": {
+    "description": "SAP Identity Pool For Nonprod testing",
+    "display_name": "elc-ip-nonprod-SAP-test",
+    "filter": "'sap' in claims.aud && claims.iss == 'https://diamond-qa.elcompanies.com/as' && claims.scope == 'sap'",
+    "identity_claim": "claims.client_id"
   },
   "elc-ip-nonprod-webmethod-customer-test": {
-    "display_name": "elc-ip-nonprod-webmethod-customer-test",
     "description": "Webmethod Identity Pool For Nonprod testing",
-    "identity_claim": "claims.client_id",
-    "filter": "'webmethods' in claims.aud && claims.iss == 'https://diamond-qa.elcompanies.com/as' && claims.scope == 'webmethods'"
-  },
-  "elc-ip-nonprod-SAP-test": {
-    "display_name": "elc-ip-nonprod-SAP-test",
-    "description": "SAP Identity Pool For Nonprod testing",
-    "identity_claim": "claims.client_id",
-    "filter": "'sap' in claims.aud && claims.iss == 'https://diamond-qa.elcompanies.com/as' && claims.scope == 'sap'"
+    "display_name": "elc-ip-nonprod-webmethod-customer-test",
+    "filter": "'webmethods' in claims.aud && claims.iss == 'https://diamond-qa.elcompanies.com/as' && claims.scope == 'webmethods'",
+    "identity_claim": "claims.client_id"
   }
 }
-
