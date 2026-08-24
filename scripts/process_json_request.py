@@ -28,6 +28,7 @@ from json_request.acl_validator import validate_acl
 from json_request.common import (
 	ALLOWED_INPUT_FILES,
 	discover_input_files,
+	input_file_name_settings,
 	load_json_file,
 	load_properties,
 	parse_list_property,
@@ -74,7 +75,7 @@ def parse_args() -> argparse.Namespace:
 	parser.add_argument("--platform-environment", required=True, choices=["nonprod", "prod"])
 	parser.add_argument("--environment", required=True, help="Confluent environment folder name, for example elc-sandbox.")
 	parser.add_argument("--cluster", required=True, help="Confluent Kafka cluster folder name.")
-	parser.add_argument("--mode", required=True, choices=["UPSERT", "DELETE"])
+	parser.add_argument("--mode", choices=["UPSERT", "DELETE"], help="Optional consistency check; mode is derived from input file names.")
 	parser.add_argument("--input-dir", type=Path, default=SCRIPT_DIR / "input")
 	return parser.parse_args()
 
@@ -182,6 +183,25 @@ def validate_run_scope(args: argparse.Namespace) -> tuple[Path, list[str]]:
 		errors.append(f"Target Terraform path is not a folder: {target_dir}")
 
 	return target_dir, errors
+
+
+def apply_filename_scope(args: argparse.Namespace, inferred_mode: str | None, inferred_environment: str | None) -> list[str]:
+	"""Apply mode/environment metadata inferred from the input file names."""
+	errors: list[str] = []
+
+	if inferred_mode is None:
+		return errors
+
+	if args.mode and args.mode != inferred_mode:
+		errors.append(f"Command-line mode '{args.mode}' does not match input filename mode '{inferred_mode}'.")
+
+	if inferred_environment and inferred_environment != args.platform_environment:
+		errors.append(
+			f"Input filename environment '{inferred_environment}' does not match --platform-environment '{args.platform_environment}'."
+		)
+
+	args.mode = inferred_mode
+	return errors
 
 
 def validate_properties(properties: dict[str, str], request_type: str, platform_environment: str, mode: str) -> list[str]:
@@ -313,15 +333,6 @@ def main() -> int:
 	setup_logging()
 	args = parse_args()
 
-	logging.info(
-		"Starting JSON request validation: platform_environment=%s environment=%s cluster=%s mode=%s input_dir=%s",
-		args.platform_environment,
-		args.environment,
-		args.cluster,
-		args.mode,
-		args.input_dir,
-	)
-
 	process_config, errors = load_process_config()
 	if not errors:
 		errors.extend(validate_process_config(process_config))
@@ -330,8 +341,28 @@ def main() -> int:
 
 	target_dir, run_scope_errors = validate_run_scope(args)
 	errors.extend(run_scope_errors)
-	input_files, input_errors = discover_input_files(args.input_dir)
-	errors.extend(input_errors)
+	input_file_name_regex, expected_input_file_pattern, input_setting_errors = input_file_name_settings(process_config)
+	errors.extend(input_setting_errors)
+	input_files: dict[str, Path] = {}
+	inferred_mode: str | None = None
+	inferred_environment: str | None = None
+	if input_file_name_regex is not None:
+		input_files, inferred_mode, inferred_environment, input_errors = discover_input_files(
+			args.input_dir,
+			input_file_name_regex,
+			expected_input_file_pattern,
+		)
+		errors.extend(input_errors)
+	errors.extend(apply_filename_scope(args, inferred_mode, inferred_environment))
+
+	logging.info(
+		"Starting JSON request validation: platform_environment=%s environment=%s cluster=%s mode=%s input_dir=%s",
+		args.platform_environment,
+		args.environment,
+		args.cluster,
+		args.mode,
+		args.input_dir,
+	)
 
 	if not errors:
 		errors.extend(validate_input_files(args, target_dir, input_files))

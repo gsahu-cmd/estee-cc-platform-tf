@@ -27,7 +27,12 @@ RELEASE_INPUT_FILE_TYPES = {
 	"group-mapping-rbac": "group-mapping-rbac.json",
 }
 
-INPUT_FILE_NAME_REGEX = re.compile(r"^release-(?P<number>[0-9]+)-elc-(?P<request_type>topics|rbac|acl|identity-pool|group-mapping|group-mapping-rbac)\.json$")
+DEFAULT_INPUT_FILE_NAME_REGEX = (
+	r"^(?P<mode>UPSERT|DELETE)-(?P<environment>[A-Za-z0-9-]+)-project-(?P<project>[A-Za-z0-9-]+)-"
+	r"release-(?P<number>[0-9]+)-elc-(?P<request_type>topics|rbac|acl|identity-pool|group-mapping|group-mapping-rbac)\.json$"
+)
+DEFAULT_INPUT_FILE_NAME_PATTERN = "<UPSERT|DELETE>-<ENV>-project-<XYZ>-release-<number>-elc-<topics|rbac|acl|identity-pool|group-mapping|group-mapping-rbac>.json"
+REQUIRED_INPUT_FILE_NAME_GROUPS = {"mode", "environment", "request_type"}
 
 
 def load_properties(property_file: Path) -> dict[str, str]:
@@ -75,6 +80,31 @@ def parse_int_property(properties: dict[str, str], key: str, errors: list[str]) 
 		return None
 
 
+def input_file_name_settings(properties: dict[str, str]) -> tuple[re.Pattern[str] | None, str, list[str]]:
+	"""Compile filename validation settings from process config."""
+	raw_regex = properties.get("INPUT_FILE_NAME_REGEX", DEFAULT_INPUT_FILE_NAME_REGEX).strip()
+	expected_pattern = properties.get("INPUT_FILE_NAME_PATTERN", DEFAULT_INPUT_FILE_NAME_PATTERN).strip()
+	errors: list[str] = []
+
+	if not raw_regex:
+		errors.append("INPUT_FILE_NAME_REGEX is mandatory in process config.")
+		return None, expected_pattern or DEFAULT_INPUT_FILE_NAME_PATTERN, errors
+
+	if not expected_pattern:
+		expected_pattern = DEFAULT_INPUT_FILE_NAME_PATTERN
+
+	try:
+		compiled_regex = re.compile(raw_regex)
+	except re.error as error:
+		return None, expected_pattern, [f"INPUT_FILE_NAME_REGEX is invalid: {error}"]
+
+	missing_groups = REQUIRED_INPUT_FILE_NAME_GROUPS - set(compiled_regex.groupindex)
+	if missing_groups:
+		errors.append("INPUT_FILE_NAME_REGEX must define named group(s): " + ", ".join(sorted(missing_groups)))
+
+	return compiled_regex, expected_pattern, errors
+
+
 def load_json_file(file_path: Path) -> Any:
 	"""Load one JSON file and raise a useful error on invalid JSON."""
 	try:
@@ -105,26 +135,34 @@ def write_json_file(file_path: Path, data: Any) -> None:
 		file_handle.write("\n")
 
 
-def discover_input_files(input_dir: Path) -> tuple[dict[str, Path], list[str]]:
-	"""Find release-style JSON request files in the input directory."""
+def discover_input_files(
+	input_dir: Path,
+	input_file_name_regex: re.Pattern[str],
+	expected_input_file_pattern: str,
+) -> tuple[dict[str, Path], str | None, str | None, list[str]]:
+	"""Find release-style JSON request files in the input directory and derive mode from their names."""
 	errors: list[str] = []
 
 	if not input_dir.exists():
-		return {}, [f"Input directory does not exist: {input_dir}"]
+		return {}, None, None, [f"Input directory does not exist: {input_dir}"]
 
 	if not input_dir.is_dir():
-		return {}, [f"Input path is not a directory: {input_dir}"]
+		return {}, None, None, [f"Input path is not a directory: {input_dir}"]
 
 	json_files = sorted(path for path in input_dir.iterdir() if path.is_file() and path.suffix.lower() == ".json")
 	allowed_files: dict[str, Path] = {}
 	unsupported_files: list[str] = []
+	discovered_modes: set[str] = set()
+	discovered_environments: set[str] = set()
 
 	for path in json_files:
-		match = INPUT_FILE_NAME_REGEX.fullmatch(path.name)
+		match = input_file_name_regex.fullmatch(path.name)
 		if not match:
 			unsupported_files.append(path.name)
 			continue
 
+		discovered_modes.add(match.group("mode"))
+		discovered_environments.add(match.group("environment"))
 		request_type = match.group("request_type")
 		canonical_file_name = RELEASE_INPUT_FILE_TYPES[request_type]
 		if canonical_file_name in allowed_files:
@@ -139,7 +177,7 @@ def discover_input_files(input_dir: Path) -> tuple[dict[str, Path], list[str]]:
 		errors.append(
 			"Unsupported input JSON file name(s): "
 			+ ", ".join(unsupported_files)
-			+ ". Expected pattern: release-<number>-elc-<topics|rbac|acl|identity-pool|group-mapping|group-mapping-rbac>.json"
+			+ f". Expected pattern: {expected_input_file_pattern}"
 		)
 
 	if len(allowed_files) < 1:
@@ -148,7 +186,15 @@ def discover_input_files(input_dir: Path) -> tuple[dict[str, Path], list[str]]:
 	if len(allowed_files) > len(ALLOWED_INPUT_FILES):
 		errors.append(f"Input directory can contain a maximum of {len(ALLOWED_INPUT_FILES)} supported JSON files.")
 
-	return allowed_files, errors
+	if len(discovered_modes) > 1:
+		errors.append("Input directory must not mix UPSERT and DELETE request files in the same run.")
+
+	if len(discovered_environments) > 1:
+		errors.append("Input directory must not mix environment values in the same run.")
+
+	inferred_mode = next(iter(discovered_modes)) if len(discovered_modes) == 1 else None
+	inferred_environment = next(iter(discovered_environments)) if len(discovered_environments) == 1 else None
+	return allowed_files, inferred_mode, inferred_environment, errors
 
 
 def require_object(data: Any, file_name: str) -> dict[str, Any] | None:
