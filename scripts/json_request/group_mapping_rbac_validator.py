@@ -19,7 +19,6 @@ def expected_group_mapping_rbac_key_suffix(binding: dict[str, Any]) -> str | Non
 	"""Build the required RBAC key suffix from binding fields."""
 	resource_identifier = binding.get("resource_name") or binding.get("resource_name_prefix")
 	raw_segments = [
-		binding.get("group_mapping_name") or binding.get("group_mapping_id"),
 		binding.get("role_name"),
 		binding.get("resource_kind"),
 	]
@@ -37,6 +36,20 @@ def expected_group_mapping_rbac_key_suffix(binding: dict[str, Any]) -> str | Non
 	return "-".join(segments)
 
 
+def expected_group_mapping_key_segment(binding: dict[str, Any], rbac_key_prefix: str) -> str | None:
+	"""Return the required group-mapping segment for an RBAC binding key."""
+	group_mapping_name = binding.get("group_mapping_name")
+	if not isinstance(group_mapping_name, str) or not group_mapping_name.strip():
+		return None
+
+	group_mapping_prefix = rbac_key_prefix.removeprefix("rbac-") + "-"
+	name = group_mapping_name.strip()
+	if name.startswith(group_mapping_prefix):
+		name = name[len(group_mapping_prefix):]
+
+	return rbac_key_segment(name) or None
+
+
 def validate_group_mapping_rbac(data: Any, mode: str, target_dir: Path, properties: dict[str, str]) -> list[str]:
 	"""Validate group-mapping-rbac.json for UPSERT or DELETE mode."""
 	if mode == "DELETE":
@@ -49,12 +62,15 @@ def validate_group_mapping_rbac(data: Any, mode: str, target_dir: Path, properti
 	errors: list[str] = []
 	valid_resource_kinds = parse_list_property(properties, "VALID_RESOURCE_KINDS")
 	rbac_key_prefix = properties.get("GROUP_MAPPING_RBAC_KEY_PREFIX", "").strip()
+	if not rbac_key_prefix:
+		platform_environment = properties.get("VALID_PLATFORM_ENVIRONMENT", "").strip().lower()
+		rbac_key_prefix = f"rbac-elc-gm-{platform_environment}" if platform_environment else "rbac-"
 
 	for binding_key, binding in data.items():
 		item_label = f"group-mapping-rbac.json[{binding_key}]"
 		if not isinstance(binding_key, str) or not binding_key.strip():
 			errors.append("group-mapping-rbac.json: binding keys must be non-empty strings.")
-		elif rbac_key_prefix and not binding_key.startswith(f"{rbac_key_prefix}-"):
+		elif not binding_key.startswith(f"{rbac_key_prefix}-"):
 			errors.append(f"{item_label}: binding key must start with '{rbac_key_prefix}-'.")
 
 		if not isinstance(binding, dict):
@@ -72,10 +88,22 @@ def validate_group_mapping_rbac(data: Any, mode: str, target_dir: Path, properti
 				errors.append(f"{item_label}: {required_field} is mandatory.")
 
 		expected_binding_key_suffix = expected_group_mapping_rbac_key_suffix(binding)
-		if expected_binding_key_suffix and isinstance(binding_key, str) and rbac_key_prefix:
-			expected_key = f"{rbac_key_prefix}-{expected_binding_key_suffix}"
-			if binding_key != expected_key:
-				errors.append(f"{item_label}: binding key must be '{expected_key}'.")
+		if expected_binding_key_suffix and isinstance(binding_key, str):
+			expected_suffix = f"-{expected_binding_key_suffix}"
+			expected_key_start = f"{rbac_key_prefix}-"
+			free_text = binding_key[len(expected_key_start):-len(expected_suffix)] if binding_key.startswith(expected_key_start) else ""
+			if not binding_key.endswith(expected_suffix) or not free_text.strip("-"):
+				errors.append(
+					f"{item_label}: binding key must use '{expected_key_start}<group-mapping-name-or-free-text>{expected_suffix}' "
+					"derived from role_name, resource_kind, and resource_name/resource_name_prefix."
+				)
+			else:
+				expected_group_mapping_segment = expected_group_mapping_key_segment(binding, rbac_key_prefix)
+				if expected_group_mapping_segment and free_text != expected_group_mapping_segment:
+					errors.append(
+						f"{item_label}: binding key group-mapping segment must be '{expected_group_mapping_segment}' "
+						f"when group_mapping_name is '{binding.get('group_mapping_name')}'."
+					)
 
 		for optional_field in ("group_mapping_name", "group_mapping_id", "resource_name", "resource_name_prefix", "organization_crn", "crn_pattern_override"):
 			if optional_field in binding and binding.get(optional_field) is not None:
