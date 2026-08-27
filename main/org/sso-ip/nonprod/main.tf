@@ -11,14 +11,14 @@ locals {
   }
 }
 
-module "identity_pool_nonprod" {
+module "identity_pool" {
   source = "../../../../modules/cc_identity_pool"
 
-  elc_mod_oidc_identity_provider_id = module.workload_identity.identity_provider_id
+  elc_mod_oidc_identity_provider_id = data.confluent_identity_provider.pingone.id
   elc_mod_oidc_identity_pools       = local.elc_identity_pools
 }
 
-module "group_mapping_nonprod" {
+module "group_mapping" {
   source = "../../../../modules/cc_group_mapping"
 
   elc_mod_group_mappings = local.elc_group_mappings

@@ -16,6 +16,16 @@ variable "oidc_identity_provider_id" {
 }
 
 
+variable "platform_environment" {
+  description = "Platform environment suffix used for generated account-access names."
+  type        = string
+
+  validation {
+    condition     = contains(["nonprod", "prod"], var.platform_environment)
+    error_message = "platform_environment must be either nonprod or prod."
+  }
+}
+
 variable "elc_service_accounts" {
   description = "Map of Confluent service accounts to create"
   type = map(object({
@@ -27,4 +37,24 @@ variable "elc_service_accounts" {
     condition     = length(var.elc_service_accounts) >= 1
     error_message = "Provide at least one service account."
   }
+}
+
+variable "elc_oidc_display_name" {
+  description = "Display name for the Confluent OAuth/OIDC identity provider"
+  type        = string
+}
+
+variable "elc_oidc_description" {
+  description = "Description for the Confluent OAuth/OIDC identity provider"
+  type        = string
+}
+
+variable "elc_oidc_issuer_uri" {
+  description = "Issuer URI for the external OIDC provider"
+  type        = string
+}
+
+variable "elc_oidc_jwks_uri" {
+  description = "JWKS URI for the external OIDC provider"
+  type        = string
 }
