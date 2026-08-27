@@ -3,6 +3,12 @@ locals {
   elc_group_mappings_file   = "${path.module}/files/elc-group-mappings.json"
   elc_identity_pools        = fileexists(local.elc_identity_pools_file) ? jsondecode(file(local.elc_identity_pools_file)) : {}
   elc_group_mappings        = fileexists(local.elc_group_mappings_file) ? jsondecode(file(local.elc_group_mappings_file)) : {}
+  elc_service_accounts = {
+    for account_key, account in var.elc_service_accounts : "${trimsuffix(account_key, "-${var.platform_environment}")}-${var.platform_environment}" => {
+      elc_mod_sa_display_name = "${trimsuffix(account.elc_sa_display_name, "-${var.platform_environment}")}-${var.platform_environment}"
+      elc_mod_sa_description  = account.elc_sa_description
+    }
+  }
 }
 
 module "identity_pool_nonprod" {
