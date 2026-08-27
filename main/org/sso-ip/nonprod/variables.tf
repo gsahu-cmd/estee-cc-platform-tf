@@ -10,8 +10,8 @@ variable "confluent_cloud_api_secret" {
   sensitive   = true
 }
 
-variable "nonprod_oidc_identity_provider_id" {
-  description = "Confluent workload identity provider ID for nonprod"
+variable "oidc_identity_provider_id" {
+  description = "Confluent workload identity provider ID"
   type        = string
 }
 

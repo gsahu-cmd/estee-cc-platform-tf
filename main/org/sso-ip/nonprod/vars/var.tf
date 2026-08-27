@@ -1,4 +1,4 @@
-nonprod_oidc_identity_provider_id = "op-rgJN"
+oidc_identity_provider_id = "op-rgJN"
 platform_environment             = "nonprod"
 
 elc_service_accounts = {

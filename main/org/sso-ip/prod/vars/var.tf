@@ -1,1 +1,9 @@
-prod_oidc_identity_provider_id = "op-77G4"
+oidc_identity_provider_id = "op-77G4"
+platform_environment             = "prod"
+
+elc_service_accounts = {
+  elc-sa-tf = {
+    elc_sa_display_name = "elc-sa-tf"
+    elc_sa_description  = "Service account via terraform testing"
+  }
+}
