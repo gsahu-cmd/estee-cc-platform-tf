@@ -32,7 +32,7 @@ from json_request.common import (
 	load_json_file,
 	load_properties,
 	parse_list_property,
-	target_topic_stack_dir,
+	target_operation_stack_dir,
 )
 from json_request.identity_pool_validator import validate_identity_pool
 from json_request.identity_pool_generator import identity_pool_stack_dir, update_identity_pool_generated_files
@@ -121,6 +121,9 @@ def validate_process_config(process_config: dict[str, str]) -> list[str]:
 	if parse_bool_property(process_config, "ARCHIVE_ENABLED", default=True) and not archive_root:
 		errors.append("ARCHIVE_ROOT is mandatory when ARCHIVE_ENABLED=true.")
 
+	if not process_config.get("OPERATION_CATALOG_ROOT", "").strip():
+		errors.append("OPERATION_CATALOG_ROOT is mandatory in process config.")
+
 	return errors
 
 
@@ -172,10 +175,16 @@ def archive_input_files(
 	return archive_dir, archived_files, []
 
 
-def validate_run_scope(args: argparse.Namespace) -> tuple[Path, list[str]]:
+def validate_run_scope(args: argparse.Namespace, process_config: dict[str, str]) -> tuple[Path, list[str]]:
 	"""Validate run-level target arguments and return the target Terraform folder."""
 	errors: list[str] = []
-	target_dir = target_topic_stack_dir(REPO_ROOT, args.platform_environment, args.environment, args.cluster)
+	target_dir = target_operation_stack_dir(
+		REPO_ROOT,
+		args.platform_environment,
+		args.environment,
+		args.cluster,
+		process_config.get("OPERATION_CATALOG_ROOT", ""),
+	)
 
 	if not target_dir.exists():
 		errors.append(f"Target Terraform folder does not exist: {target_dir}")
@@ -183,6 +192,33 @@ def validate_run_scope(args: argparse.Namespace) -> tuple[Path, list[str]]:
 		errors.append(f"Target Terraform path is not a folder: {target_dir}")
 
 	return target_dir, errors
+
+
+def request_target_dir(
+	args: argparse.Namespace,
+	request_type: str,
+	properties: dict[str, str],
+) -> Path:
+	"""Resolve the Terraform stack directory for one request type from its config."""
+	if request_type == "identity_pool":
+		return identity_pool_stack_dir(REPO_ROOT, args.platform_environment, properties)
+
+	if request_type == "group_mapping":
+		return group_mapping_stack_dir(REPO_ROOT, args.platform_environment, properties)
+
+	catalog_root = properties["CATALOG_ROOT"]
+	return target_operation_stack_dir(REPO_ROOT, args.platform_environment, args.environment, args.cluster, catalog_root)
+
+
+def validate_request_target_dir(request_type: str, target_dir: Path) -> list[str]:
+	"""Validate that a configured request target folder exists."""
+	if not target_dir.exists():
+		return [f"{request_type}: configured Terraform folder does not exist: {target_dir}"]
+
+	if not target_dir.is_dir():
+		return [f"{request_type}: configured Terraform path is not a folder: {target_dir}"]
+
+	return []
 
 
 def apply_filename_scope(args: argparse.Namespace, inferred_mode: str | None, inferred_environment: str | None) -> list[str]:
@@ -216,6 +252,9 @@ def validate_properties(properties: dict[str, str], request_type: str, platform_
 			f"expected '{platform_environment}'."
 		)
 
+	if not properties.get("CATALOG_ROOT", "").strip():
+		errors.append(f"{request_type}: CATALOG_ROOT is mandatory in config.")
+
 	if mode not in valid_modes:
 		errors.append(f"{request_type}: mode '{mode}' is not allowed by config.")
 
@@ -237,7 +276,10 @@ def validate_input_files(args: argparse.Namespace, target_dir: Path, input_files
 			errors.append(str(error))
 			continue
 
-		errors.extend(validate_properties(properties, request_type, args.platform_environment, args.mode))
+		property_errors = validate_properties(properties, request_type, args.platform_environment, args.mode)
+		errors.extend(property_errors)
+		if property_errors:
+			continue
 
 		try:
 			payload = load_json_file(file_path)
@@ -246,13 +288,10 @@ def validate_input_files(args: argparse.Namespace, target_dir: Path, input_files
 			continue
 
 		validator = VALIDATORS[request_type]
-		validator_target_dir = (
-			identity_pool_stack_dir(REPO_ROOT, args.platform_environment)
-			if request_type == "identity_pool"
-			else group_mapping_stack_dir(REPO_ROOT, args.platform_environment)
-			if request_type == "group_mapping"
-			else target_dir
-		)
+		validator_target_dir = request_target_dir(args, request_type, properties)
+		errors.extend(validate_request_target_dir(request_type, validator_target_dir))
+		if errors:
+			continue
 		errors.extend(validator(payload, args.mode, validator_target_dir, properties))
 
 	return errors
@@ -274,7 +313,8 @@ def update_generated_files(args: argparse.Namespace, target_dir: Path, input_fil
 		try:
 			properties = load_properties(property_file)
 			payload = load_json_file(topics_file)
-			updated_files.extend(update_topic_generated_files(payload, args.mode, target_dir, properties))
+			topic_dir = request_target_dir(args, "topic", properties)
+			updated_files.extend(update_topic_generated_files(payload, args.mode, topic_dir, properties))
 		except (FileNotFoundError, ValueError) as error:
 			errors.append(str(error))
 
@@ -283,7 +323,7 @@ def update_generated_files(args: argparse.Namespace, target_dir: Path, input_fil
 		try:
 			properties = load_properties(property_file)
 			payload = load_json_file(identity_pool_file)
-			identity_pool_dir = identity_pool_stack_dir(REPO_ROOT, args.platform_environment)
+			identity_pool_dir = request_target_dir(args, "identity_pool", properties)
 			updated_files.extend(update_identity_pool_generated_files(payload, args.mode, identity_pool_dir, properties))
 		except (FileNotFoundError, ValueError) as error:
 			errors.append(str(error))
@@ -293,7 +333,7 @@ def update_generated_files(args: argparse.Namespace, target_dir: Path, input_fil
 		try:
 			properties = load_properties(property_file)
 			payload = load_json_file(group_mapping_file)
-			group_mapping_dir = group_mapping_stack_dir(REPO_ROOT, args.platform_environment)
+			group_mapping_dir = request_target_dir(args, "group_mapping", properties)
 			updated_files.extend(update_group_mapping_generated_files(payload, args.mode, group_mapping_dir, properties))
 		except (FileNotFoundError, ValueError) as error:
 			errors.append(str(error))
@@ -303,7 +343,8 @@ def update_generated_files(args: argparse.Namespace, target_dir: Path, input_fil
 		try:
 			properties = load_properties(property_file)
 			payload = load_json_file(group_mapping_rbac_file)
-			updated_files.extend(update_group_mapping_rbac_generated_files(payload, args.mode, target_dir, properties))
+			group_mapping_rbac_dir = request_target_dir(args, "group_mapping_rbac", properties)
+			updated_files.extend(update_group_mapping_rbac_generated_files(payload, args.mode, group_mapping_rbac_dir, properties))
 		except (FileNotFoundError, ValueError) as error:
 			errors.append(str(error))
 
@@ -312,7 +353,8 @@ def update_generated_files(args: argparse.Namespace, target_dir: Path, input_fil
 		try:
 			properties = load_properties(property_file)
 			payload = load_json_file(rbac_file)
-			updated_files.extend(update_rbac_generated_files(payload, args.mode, target_dir, properties))
+			rbac_dir = request_target_dir(args, "rbac", properties)
+			updated_files.extend(update_rbac_generated_files(payload, args.mode, rbac_dir, properties))
 		except (FileNotFoundError, ValueError) as error:
 			errors.append(str(error))
 
@@ -321,7 +363,8 @@ def update_generated_files(args: argparse.Namespace, target_dir: Path, input_fil
 		try:
 			properties = load_properties(property_file)
 			payload = load_json_file(acl_file)
-			updated_files.extend(update_acl_generated_files(payload, args.mode, target_dir, properties))
+			acl_dir = request_target_dir(args, "acl", properties)
+			updated_files.extend(update_acl_generated_files(payload, args.mode, acl_dir, properties))
 		except (FileNotFoundError, ValueError) as error:
 			errors.append(str(error))
 
@@ -339,7 +382,7 @@ def main() -> int:
 		logging.info("Loaded process config: %s", PROCESS_CONFIG_FILE.relative_to(CONFIG_DIR))
 		logging.info("Git integration enabled: %s", parse_bool_property(process_config, "GIT_ENABLED"))
 
-	target_dir, run_scope_errors = validate_run_scope(args)
+	target_dir, run_scope_errors = validate_run_scope(args, process_config)
 	errors.extend(run_scope_errors)
 	input_file_name_regex, expected_input_file_pattern, input_setting_errors = input_file_name_settings(process_config)
 	errors.extend(input_setting_errors)

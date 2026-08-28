@@ -59,22 +59,22 @@ variable "schema_registry_api_secret" {
   sensitive   = true
 }
 
-variable "sso_ip_state_resource_group_name" {
-  description = "Azure resource group name for the SSO identity pool Terraform state"
+variable "account_access_state_resource_group_name" {
+  description = "Azure resource group name for the account-access Terraform state"
   type        = string
 }
 
-variable "sso_ip_state_storage_account_name" {
-  description = "Azure storage account name for the SSO identity pool Terraform state"
+variable "account_access_state_storage_account_name" {
+  description = "Azure storage account name for the account-access Terraform state"
   type        = string
 }
 
-variable "sso_ip_state_container_name" {
-  description = "Azure blob container name for the SSO identity pool Terraform state"
+variable "account_access_state_container_name" {
+  description = "Azure blob container name for the account-access Terraform state"
   type        = string
 }
 
-variable "sso_ip_state_key" {
-  description = "Azure backend key for the SSO identity pool Terraform state"
+variable "account_access_state_key" {
+  description = "Azure backend key for the account-access Terraform state"
   type        = string
 }

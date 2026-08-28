@@ -135,6 +135,19 @@ def write_json_file(file_path: Path, data: Any) -> None:
 		file_handle.write("\n")
 
 
+def resolve_repo_path(repo_root: Path, raw_path: str) -> Path:
+	"""Resolve a configured path relative to the repository root unless absolute."""
+	path = Path(raw_path)
+	if path.is_absolute():
+		return path
+	return repo_root / path
+
+
+def catalog_stack_dir(repo_root: Path, catalog_root: str, *path_parts: str) -> Path:
+	"""Resolve a Terraform stack path from a configured catalog root and path parts."""
+	return resolve_repo_path(repo_root, catalog_root).joinpath(*path_parts)
+
+
 def discover_input_files(
 	input_dir: Path,
 	input_file_name_regex: re.Pattern[str],
@@ -230,6 +243,12 @@ def validate_delete_keys(request_data: Any, existing_data: dict[str, Any], file_
 	return errors
 
 
-def target_topic_stack_dir(repo_root: Path, platform_environment: str, environment: str, cluster: str) -> Path:
-	"""Return the Terraform topic stack directory for the selected environment and cluster."""
-	return repo_root / "main" / "topics" / platform_environment / environment / cluster
+def target_operation_stack_dir(
+	repo_root: Path,
+	platform_environment: str,
+	environment: str,
+	cluster: str,
+	catalog_root: str,
+) -> Path:
+	"""Return the operational Terraform stack directory for the selected environment and cluster."""
+	return catalog_stack_dir(repo_root, catalog_root, platform_environment, environment, cluster)

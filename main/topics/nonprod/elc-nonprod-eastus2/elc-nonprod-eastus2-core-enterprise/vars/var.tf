@@ -4,7 +4,7 @@ kafka_rest_endpoint = "https://lkc-7ypqr12-ap4jg2gn.eastus2.azure.accesspoint.gl
 schema_registry_id    = "lsrc-o32x17o"
 catalog_rest_endpoint = "https://psrc-40382p5.eastus2.azure.confluent.cloud"
 
-sso_ip_state_resource_group_name  = "estee-poc-tf"
-sso_ip_state_storage_account_name = "tfstateeesteepoc"
-sso_ip_state_container_name       = "tfstate"
-sso_ip_state_key                  = "identity-pool-nonprod.terraform.tfstate"
+account_access_state_resource_group_name  = "estee-poc-tf"
+account_access_state_storage_account_name = "tfstateeesteepoc"
+account_access_state_container_name       = "tfstate"
+account_access_state_key                  = "identity-pool-nonprod.terraform.tfstate"
