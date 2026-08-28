@@ -1,0 +1,8 @@
+{
+  "elc-ip-nonprod-demo-app": {
+    "display_name": "elc-ip-nonprod-demo-app",
+    "description": "Dummy identity pool request for testing identity pool creation.",
+    "identity_claim": "claims.sub",
+    "filter": "claims.group == \"demo-app\""
+  }
+}

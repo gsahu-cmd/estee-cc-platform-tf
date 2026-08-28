@@ -1,0 +1,20 @@
+{
+  "acl-elc-nonprod-demo-app-read-topic-v2": {
+    "resource_type": "TOPIC",
+    "resource_name": "elc_sales_public_order_snapshot_raw_json_v2",
+    "pattern_type": "LITERAL",
+    "principal": "User:demo-app-principal",
+    "operation": "READ",
+    "permission": "ALLOW",
+    "host": "*"
+  },
+  "acl-elc-nonprod-demo-app-read-group-v2": {
+    "resource_type": "GROUP",
+    "resource_name": "demo-app-consumer-group",
+    "pattern_type": "LITERAL",
+    "principal": "User:demo-app-principal",
+    "operation": "READ",
+    "permission": "ALLOW",
+    "host": "*"
+  }
+}
