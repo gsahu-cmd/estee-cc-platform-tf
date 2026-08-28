@@ -5,5 +5,12 @@
       "retention.ms": "604800000"
     },
     "partitions_count": 3
+  },
+  "elc_sales_public_order_snapshot_raw_json_v2": {
+    "config": {
+      "cleanup.policy": "delete",
+      "retention.ms": "604800000"
+    },
+    "partitions_count": 3
   }
 }

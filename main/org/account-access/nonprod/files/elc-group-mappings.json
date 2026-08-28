@@ -3,5 +3,10 @@
     "description": "Dummy group mapping request for testing group mapping creation.",
     "display_name": "elc-gm-nonprod-demo-app",
     "filter": "claims.group == \"demo-app\""
+  },
+  "elc-gm-nonprod-demo2-app": {
+    "description": "Dummy group mapping request for testing group mapping creation.",
+    "display_name": "elc-gm-nonprod-demo2-app",
+    "filter": "claims.group == \"demo-app\""
   }
 }

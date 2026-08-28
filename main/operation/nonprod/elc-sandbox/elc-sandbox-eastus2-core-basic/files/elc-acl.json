@@ -8,6 +8,15 @@
     "resource_name": "demo-app-consumer-group",
     "resource_type": "GROUP"
   },
+  "acl-elc-nonprod-demo-app-read-group-v2": {
+    "host": "*",
+    "operation": "READ",
+    "pattern_type": "LITERAL",
+    "permission": "ALLOW",
+    "principal": "User:demo-app-principal",
+    "resource_name": "demo-app-consumer-group",
+    "resource_type": "GROUP"
+  },
   "acl-elc-nonprod-demo-app-read-topic": {
     "host": "*",
     "operation": "READ",
@@ -15,6 +24,15 @@
     "permission": "ALLOW",
     "principal": "User:demo-app-principal",
     "resource_name": "elc_sales_public_order_snapshot_raw_json_v1",
+    "resource_type": "TOPIC"
+  },
+  "acl-elc-nonprod-demo-app-read-topic-v2": {
+    "host": "*",
+    "operation": "READ",
+    "pattern_type": "LITERAL",
+    "permission": "ALLOW",
+    "principal": "User:demo-app-principal",
+    "resource_name": "elc_sales_public_order_snapshot_raw_json_v2",
     "resource_type": "TOPIC"
   }
 }
