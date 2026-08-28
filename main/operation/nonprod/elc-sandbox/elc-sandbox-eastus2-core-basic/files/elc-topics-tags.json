@@ -5,6 +5,13 @@
       "tags": [
         "Environment"
       ]
+    },
+    {
+      "name": "elc_sales_public_order_snapshot_raw_json_v2",
+      "tags": [
+        "Payments",
+        "Terraform"
+      ]
     }
   ]
 }

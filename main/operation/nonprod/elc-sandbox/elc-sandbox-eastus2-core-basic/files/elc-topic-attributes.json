@@ -3,5 +3,10 @@
     "description": "Dummy topic request for testing topic creation.",
     "owner": "demo-team",
     "ownerEmail": "demo-team@example.com"
+  },
+  "elc_sales_public_order_snapshot_raw_json_v2": {
+    "description": "Dummy topic request for testing topic creation.",
+    "owner": "demo-team",
+    "ownerEmail": "demo-team@example.com"
   }
 }
