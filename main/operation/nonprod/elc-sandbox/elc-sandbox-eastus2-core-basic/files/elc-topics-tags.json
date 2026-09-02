@@ -12,6 +12,13 @@
         "Payment",
         "Terraform"
       ]
+    },
+    {
+      "name": "elc_sales_public_order_snapshot_raw_json_v6",
+      "tags": [
+        "Payments",
+        "Terraform"
+      ]
     }
   ]
 }
