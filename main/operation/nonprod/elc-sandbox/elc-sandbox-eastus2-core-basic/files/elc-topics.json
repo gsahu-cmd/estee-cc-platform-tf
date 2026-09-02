@@ -12,5 +12,11 @@
       "retention.ms": "604800000"
     },
     "partitions_count": 3
+  },
+  "elc_sales_public_order_snapshot_raw_json_v4": {
+    "config": {
+      "retention.ms": "604800000"
+    },
+    "partitions_count": 3
   }
 }
